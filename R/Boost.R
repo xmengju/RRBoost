@@ -1,3 +1,24 @@
+#' Derivative of Tukey's bi-square loss function.
+#'
+#' This function evaluates the first derivative of Tukey's bi-square loss function.
+#'
+#' This function evaluates the first derivative of Tukey's bi-square loss function.
+#'
+#' @param r a vector of real numbers
+#' @param k a positive tuning constant.
+#'
+#' @return A vector of the same length as \code{x}.
+#'
+#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#'
+#' @examples
+#' x <- seq(-2, 2, length=10)
+#' psi.tukey(r=x, k = 1.5)
+#'
+#' @export
+#' @import stats graphics
+#' @useDynLib RBF, .registration = TRUE
+
 Boost.control <- function(n_init = 100, cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE){
 
   if(length(cc_s) == 0){
@@ -151,7 +172,46 @@ cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.g
 }
 
 
-
+#' Classic Backfitting
+#'
+#' This function computes the standard backfitting algorithm for additive models.
+#'
+#' This function computes the standard backfitting algorithm for additive models,
+#' using a squared loss function and local polynomial smoothers.
+#'
+#' @param Xp a matrix (n x p) containing the explanatory variables
+#' @param yp vector of responses (missing values are allowed)
+#' @param point matrix of points where predictions will be computed and returned.
+#' @param windows vector of bandwidths for the local polynomial smoother,
+#' one per explanatory variable.
+#' @param epsilon convergence criterion. Maximum allowed relative difference between
+#' consecutive estimates
+#' @param degree degree of the local polynomial smoother. Defaults to \code{0} (local constant).
+#' @param prob vector of probabilities of observing each response (length n).
+#' Defaults to \code{NULL} and in that case it is ignored.
+#' @param max.it Maximum number of iterations for the algorithm.
+#'
+#' @return A list with the following components:
+#' \item{alpha}{Estimate for the intercept.}
+#' \item{g.matrix }{Matrix of estimated additive components (n by p).}
+#' \item{prediction }{Matrix of estimated additive components for the points listed in
+#' the argument \code{point}.}
+#'
+#' @references Hasie, TJ and Tibshirani, RJ. Generalized Additive Models, 1990. Chapman
+#' and Hall, London.
+#'
+#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#'
+#' @examples
+#' data(airquality)
+#' x <- airquality
+#' x <- x[complete.cases(x), c('Ozone', 'Solar.R', 'Wind', 'Temp')]
+#' y <- as.vector(x$Ozone)
+#' x <- as.matrix(x[, c('Solar.R', 'Wind', 'Temp')])
+#' tmp <- backf.cl(Xp = x, yp=y, windows=c(130, 9, 10), degree=1)
+#'
+#' @export
+#'
 Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),  shrinkage = 1, niter = 200, y_init = "median",
                 max_depth = 1, control = Boost.control()) {
   print(type)
@@ -419,7 +479,7 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
       model_tmp <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error= error,
                                shrinkage = shrinkage,  niter = niter, y_init =  "LADTree", max_depth = max_depth,
                                control= control_tmp)
-      if(model_tmp$err_val[model_tmp$early_stop_idx] > best_err){
+      if(model_tmp$err_val[model_tmp$early_stop_idx] >= best_err){
          rm(model_tmp)
       }else{
         model_best <- model_tmp
