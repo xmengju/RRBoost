@@ -1,32 +1,32 @@
 Boost.control <- function(n_init = 100, cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE){
 
   if(length(cc_s) == 0){
-    cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi) 
+    cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi)
   }
-  
+
   if(length(eff_m) == 0){
     eff_m <- 0.95
   }
   cc_m <-  as.numeric(RobStatTM::lmrobdet.control(efficiency=eff_m, family='bisquare')$tuning.psi)
-  
+
   return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree))
 }
 
 init.boosting <- function(type)
 {
-  switch (type, 
+  switch (type,
           L2Boost = {
           init_functions <- init.boost("square")
           },
           Robloss = {
             init_functions <- init.boost("huber")
-          }, 
+          },
           LADBoost = {
             init_functions <- init.boost("lad")
           },
           MBoost = {
             init_functions <- init.boost("huber")
-          }, 
+          },
           SBoost = {
             init_functions <- init.boost("tukey")
           },
@@ -40,12 +40,12 @@ init.boosting <- function(type)
 
 cal.neggrad <- function(type, x_train, y_train, f_t_train, init_status, ss, func, func.grad, cc)
 {
-  dat_tmp <- data.frame(x_train); 
-  
-  if(type == "Robloss"){ 
+  dat_tmp <- data.frame(x_train);
+
+  if(type == "Robloss"){
     dat_tmp$neg_grad <-  - func.grad(f_t_train - y_train, cc = ss)
   }
-  
+
   if(type == "MBoost") {
     dat_tmp$neg_grad <-  - func.grad(f_t_train - y_train, cc = ss)
   }
@@ -54,7 +54,7 @@ cal.neggrad <- function(type, x_train, y_train, f_t_train, init_status, ss, func
     dat_tmp$neg_grad <- - func.grad(f_t_train - y_train)
   }
   if(type == "SBoost" | (type == "RRBoost" & init_status == 0)) {
-    tmp_numerator <- -func.grad((f_t_train - y_train)/ss, cc = cc)/ss 
+    tmp_numerator <- -func.grad((f_t_train - y_train)/ss, cc = cc)/ss
     tmp_denominator <- -sum(func.grad((f_t_train - y_train)/ss, cc = cc)*(y_train - f_t_train))/(ss^2)
     dat_tmp$neg_grad <- tmp_numerator/(tmp_denominator)
   }
@@ -67,16 +67,16 @@ cal.neggrad <- function(type, x_train, y_train, f_t_train, init_status, ss, func
 }
 
 cal.ss <- function(type, f_t_train, y_train,  cc, bb) {
-  
+
   ss <-1
-  if(type == "Robloss"){  
+  if(type == "Robloss"){
     ss <-  mad(f_t_train -y_train)
   }
 
   if(type %in% c("SBoost", "RRBoost")) {
       ss <- mscale(f_t_train - y_train,  tuning.chi=cc, delta = bb)
   }
-  
+
   if(type == "MBoost") {
     ss  <- quantile(abs(f_t_train - y_train),0.9)
   }
@@ -85,7 +85,7 @@ cal.ss <- function(type, f_t_train, y_train,  cc, bb) {
 }
 
 cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, init_status, cc = 1.547, bb  = 0.5) {
-  switch(type, 
+  switch(type,
          LADBoost = {
            return(bisection.search(f_t_train, h_train, y_train, func, func.grad, 0, 500))
          },
@@ -93,7 +93,7 @@ cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.g
          SBoost = {
              func_line <- function(x) {mscale(x, delta = bb, tuning.chi = cc)}
              func_line.grad <- function(x, s = ss) {
-               
+
                if(sum(func.grad(x/s, cc = cc)*(x)) == 0){
                  return(0)
                }else{
@@ -152,12 +152,12 @@ cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.g
 
 
 
-Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),  shrinkage = 1, niter = 200, y_init = "median", 
+Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),  shrinkage = 1, niter = 200, y_init = "median",
                 max_depth = 1, control = Boost.control()) {
   print(type)
 
-  cc <- NA; n_init <- NA;  
-  
+  cc <- NA; n_init <- NA;
+
   tol_iter <- control$tol_iter
   save_f <- control$save_f
   save_tree <- control$save_tree
@@ -165,19 +165,19 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   bb <- control$bb
 
   if(type == "RRBoost"){
-    n_init <- control$n_init 
+    n_init <- control$n_init
     cc <- control$cc_s
     cc_m <- control$cc_m
   }
-  
+
   if(type == "SBoost"){
     cc <- control$cc_s
   }
-  
+
   if(type == "MBoost"){
     cc <- control$cc_m
   }
-  
+
   cal_imp <- control$cal_imp
 
   if(class(x_train) == "numeric") {
@@ -190,30 +190,30 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   }else{
     x_val <- data.frame(x_val)
   }
-  
+
   # initialize functions
   init_functions <- init.boosting(type)
   func  <- init_functions$func
   func.grad <- init_functions$func.grad
   func.grad.prime <-  init_functions$func.grad.prime
-  
+
   # save initialized value
-  f_train_init <- NULL 
-  
+  f_train_init <- NULL
+
   # save the function value at early stopping time (flag outliers for variable importance calculation)
   f_train_early <- NULL
   f_val_early <- NULL
 
-  # to save the predictions 
+  # to save the predictions
   if(save_f == TRUE){
     f_train <-  matrix(NA, nrow(x_train), niter)
     f_val <-  matrix(NA,  nrow(x_val), niter)
   }
-  
+
   # to save the trees
   tree_init <- NULL
   tree_list <- list()
-  
+
 
   # initialization
   if(y_init == "LADTree"){
@@ -222,40 +222,40 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       }else{
         max_depth_init <- control$max_depth_init
       }
-    
+
       if(is.null(control$min_leaf_size_init)) {
         min_leaf_size_init = 10
       }else{
         min_leaf_size_init <- control$min_leaf_size_init
       }
-    
+
     print(c("max_depth_init", max_depth_init,"min_leaf_size_init", min_leaf_size_init))
     dat_tmp <- data.frame(x_train, y_train = y_train)
     tree_init <- rpart(y_train~ ., data = dat_tmp,control = rpart.control(maxdepth = max_depth_init, minbucket = min_leaf_size_init, xval = 0, cp = -Inf), method = alist)
     f_train_early <- f_train_init <- f_t_train <- predict(tree_init, newdata = x_train)
     f_val_early <- f_t_val <-  predict(tree_init, newdata = x_val)
   }else{
-    # initialization either with median 
+    # initialization either with median
     f_train_early <- f_train_init <- f_t_train <- rep(median(y_train), length(y_train))
     f_val_early <- f_t_val <- rep(median(y_train), length(y_val))
   }
 
-  # to save alpha 
+  # to save alpha
   alpha <- rep(NA, niter)
-  
-  # to save the error 
+
+  # to save the error
   err_train <-  err_val <-  rep(NA, niter)
-  
-  # save the scale 
+
+  # save the scale
   ss_train <- rep(NA, niter)
 
   # save the loss for SBoost and RRBoost (for early stop)
   loss_train <- rep(NA, niter)
   loss_val <- rep(NA, niter)
-  
-  # denote the transition from S-type to M-type 
-  init_status <- 0; 
-  
+
+  # denote the transition from S-type to M-type
+  init_status <- 0;
+
   # when S-type is finished
   when_init = NA
 
@@ -264,12 +264,12 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     if(i%%100 ==0) {
      print(c("iteration", i))
     }
-    
+
     if(init_status == 0) {
       ss <- cal.ss(type, f_t_train, y_train,  cc, bb)
     }
-    
-    ss_train[i] <- ss 
+
+    ss_train[i] <- ss
 
     dat_tmp <- cal.neggrad(type, x_train, y_train, f_t_train, init_status, ss, func, func.grad, cc)
     tree.model <- rpart(neg_grad~ ., data = dat_tmp, control = rpart.control(maxdepth = max_depth, cp = -Inf))
@@ -283,7 +283,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       alpha_pre <- 0
     }
     alpha[i] <- cal.alpha(type, alpha_pre, f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss = ss, init_status, cc = cc, bb = bb)
-    
+
     f_t_train <- f_t_train + shrinkage*alpha[i]* h_train
     f_t_val <- f_t_val +  shrinkage*alpha[i]*h_val
 
@@ -291,27 +291,27 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     err_train[i] <- mean(abs(f_t_train - y_train))
     err_val[i] <-  mean(abs(f_t_val - y_val))
 
-    # record loss values for early stopping 
+    # record loss values for early stopping
     if(type == "SBoost" | (type == "RRBoost" & init_status == 0)){
       loss_val[i] <-cal.ss(type, f_t_val, y_val,  cc, bb)
       loss_train[i] <-cal.ss(type, f_t_train, y_train,  cc, bb)
     }
-    
+
     if(type == "RRBoost" & init_status == 1){
       loss_train[i] <- mean(func((f_t_train - y_train)/ss, cc = cc_m))
       loss_val[i] <- mean(func((f_t_val - y_val)/ss, cc = cc_m))
     }
-    
+
     if(type == "LADBoost"){
       loss_train[i] <- mean(abs(f_t_train - y_train))
       loss_val[i] <-  mean(abs(f_t_val - y_val))
     }
-    
+
     if(type %in% c("MBoost" ,"Robloss","L2Boost")){
       loss_train[i] <-  mean(func(f_t_train - y_train, cc = ss))
       loss_val[i] <- mean(func(f_t_val - y_val, cc = ss))
     }
-    
+
     if(i == 1){
       # initiailze the early stopping f
       if(type == "RRBoost"){
@@ -321,7 +321,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       f_val_early <- f_t_val
       early_stop_idx <- 1
     }else{
-      
+
       if(type == "RRBoost" & i <= n_init){
         if(round(loss_val[i],7) < min(round(loss_val[1:(i-1)],7))){
           when_init <- i
@@ -330,7 +330,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
           f_val_early <- f_t_val
         }
       }
-      
+
       if(type == "RRBoost" &  (init_status == 1)){
         if(i == n_init + 1){
           early_stop_idx <- i
@@ -344,70 +344,70 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
           }
         }
       }
-      
+
       if(type == "RRBoost" & i == n_init){
         init_status <- 1
         cc <- cc_m
         ss <- ss_train[when_init]
-        f_t_train <- f_train_early  
-        f_t_val <- f_val_early 
+        f_t_train <- f_train_early
+        f_t_val <- f_val_early
         early_stop_idx <- n_init + 1
       }
-      
+
       if(type != "RRBoost"){
       if(round(loss_val[i],7) < min(round(loss_val[1:(i-1)],7)) ){
         early_stop_idx  <- i
         f_train_early  <- f_t_train
-        f_val_early <- f_t_val        
+        f_val_early <- f_t_val
       }
     }
-      
+
       if(save_f == TRUE){
-      f_train[,i] <- f_t_train; f_val[,i] <- f_t_val; 
+      f_train[,i] <- f_t_train; f_val[,i] <- f_t_val;
       }
     }
   }
-  
+
   model <- list(type = type, control = control, error = error, y_init = y_init, shrinkage = shrinkage,  tree_init = tree_init, tree_list = tree_list, f_train_init = f_train_init, alpha = alpha,  early_stop_idx = early_stop_idx, when_init = when_init, ss_train = ss_train, loss_train = loss_train, loss_val = loss_val,  err_val = err_val, err_train = err_train, res_mad = mad(f_train_early - y_train))
-  
+
   if(make_prediction == TRUE){
     model <- cal_predict(model, x_test, y_test)
   }
-  
+
   train_trmse <- trmse(control$trim_prop,control$trim_c, f_train_early - y_train)
   model$train_trmse <- train_trmse
-  
+
   if(cal_imp == TRUE){
     model <- cal_imp(model, x_train, y_train)
   }
-  
+
   if(save_tree == FALSE){
     model$tree_init = NULL
     model$tree_list = NULL
   }
-  
+
   if(save_f == TRUE){
     model$f_train  <- f_train
     model$f_val  <- f_val
   }
-  
+
   return(model)
 }
 
 
 
 Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost", error = "rmse", shrinkage = 1, niter = 100, max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1,2,3,4), min_leaf_size_init_set = c(10,20,30), control = Boost.control()){
-  
+
   control_tmp <- control
   if(control$cal_imp == TRUE){
     control_tmp$cal_imp <- FALSE
     control_tmp$save_tree <- TRUE
   }
-  
-  model_best <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error = error, shrinkage = shrinkage, niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp) 
+
+  model_best <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error = error, shrinkage = shrinkage, niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp)
   best_err <- model_best$err_val[model_best$early_stop_idx]
   params = c(0,0)
-  
+
   if(y_init == "LADTree") {
     combs <- expand.grid(min_leafs= min_leaf_size_init_set, max_depths= max_depth_init_set)
     for(j in 1:nrow(combs)) {
@@ -428,11 +428,11 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
       }
     }
   }
-  
+
   if(control$cal_imp == TRUE){
     model_best = cal_imp(model_best, x_train, y_train)
   }
-  
+
   if(control$save_tree == FALSE){
       model_best$tree_list = NULL
       model_best$tree_init = NULL
@@ -458,16 +458,16 @@ cal_error <- function(control, error_type, f_t_test, y_test){
 
 
 cal_predict <- function(model, x_test, y_test){
-  
+
   if(class(x_test) == "numeric") {
     x_test <- data.frame(x = x_test)
   }else{
     x_test <- data.frame(x_test)
   }
-  
+
   type <- model$type
   save_f <- model$control$save_f
-  shrinkage <- model$shrinkage 
+  shrinkage <- model$shrinkage
   early_stop_idx <- model$early_stop_idx
   when_init <- model$when_init
   n_init <- model$control$n_init
@@ -475,18 +475,18 @@ cal_predict <- function(model, x_test, y_test){
   err_test <- data.frame(matrix(NA, nrow = early_stop_idx, ncol = length(error)))
   colnames(err_test) <- error
   control <- model$control
-  
+
   if(save_f == TRUE){
     f_test <- matrix(NA, nrow(x_test), niter)
   }
-  
+
   if(model$y_init == "median"){
     f_t_test <- f_t_test_init <- model$f_train_init[1]
   }
   if(model$y_init  == "LADTree"){
     f_t_test <- f_t_test_init <- predict(model$tree_init, newdata = x_test)
   }
-  
+
   if(type == "RRBoost" & (when_init < early_stop_idx)){
     for(i in c(1:when_init, ((n_init+1):early_stop_idx))){
       f_t_test  <-  f_t_test + shrinkage * model$alpha[i] *predict(model$tree_list[[i]], newdata = x_test)
@@ -508,7 +508,7 @@ cal_predict <- function(model, x_test, y_test){
       }
     }
   }
-  
+
   if(save_f == TRUE){
     model$f_test <- f_test
   }
@@ -519,7 +519,7 @@ cal_predict <- function(model, x_test, y_test){
 }
 
 cal_imp <- function(model,  x_train, y_train){
-  
+
   var_imp <-  data.frame(t(rep(0, ncol(x_train))))
   names(var_imp)  <- colnames(x_train)
   when_init <- model$when_init
@@ -530,18 +530,18 @@ cal_imp <- function(model,  x_train, y_train){
   type <- model$type
   y_init <- model$y_init
   n_init <- model$control$n_init
-  
+
   for(j in 1:ncol(x_train)){
     x_train_j <- x_train
     x_train_j[,j] <- sample(x_train_j[,j],length(x_train_j[,j]))
-    
+
     if(y_init == "median"){
       f_t_train_j = median(y_train)
     }
     if(y_init  == "LADTree"){
       f_t_train_j <- predict(model$tree_init, newdata = data.frame(x_train_j))
     }
-    
+
     if(type == "RRBoost" & (n_init < early_stop_idx)){
       for(i in 1:when_init){
         f_t_train_j  <-  f_t_train_j  + alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
@@ -556,10 +556,10 @@ cal_imp <- function(model,  x_train, y_train){
     }
     var_imp[j] <-  rmse(f_t_train_j[idx] - y_train[idx]) - train_trmse$trmse
   }
-  
+
   model$var_importance <- var_imp
   colnames(model$var_importance)<- colnames(x_train)
   return(model)
-} 
+}
 
 
