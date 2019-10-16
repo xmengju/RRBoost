@@ -1,23 +1,29 @@
-#' Derivative of Tukey's bi-square loss function.
+#' Boost.control
 #'
-#' This function evaluates the first derivative of Tukey's bi-square loss function.
+#' Control for Boost fits
 #'
-#' This function evaluates the first derivative of Tukey's bi-square loss function.
+#' Various parameters that control aspects of the `Boost` fit.
 #'
-#' @param r a vector of real numbers
-#' @param k a positive tuning constant.
+#' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
+#' @param cc_s  tuning constant of tukey's loss in SBoost (numeric)
+#' @param eff_s  normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)
+#' @param bb  breakdown point of the SBoost estimator (numeric)
+#' one per explanatory variable.
+#' @param trim_prop  trimming proportion if `trmse` is used as the performance metric (numeric)
+#' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric)
+#' @param max_depth_init the maximum depth of the initial LADTtree  (numeric, default 3)
+#' @param min_leaf_size_init the minimum number of observations per node of the initial LADTtree (numeric)
+#' @param cal_imp calculate variable importance  (TRUE or FALSE)
+#' @param save_f save the function estimates at all iterations (TRUE or FALSE)
+#' @param make_prediction make predictions using x_test  (TRUE or FALSE)
+#' @param save_tree save trees at all iterations  (TRUE or FALSE)
 #'
-#' @return A vector of the same length as \code{x}.
+#' @return A list of all input parameters
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
-#' @examples
-#' x <- seq(-2, 2, length=10)
-#' psi.tukey(r=x, k = 1.5)
-#'
 #' @export
-#' @import stats graphics
-#' @useDynLib RBF, .registration = TRUE
+#'
 
 Boost.control <- function(n_init = 100, cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE){
 
@@ -59,6 +65,7 @@ init.boosting <- function(type)
   return(init_functions)
 }
 
+
 cal.neggrad <- function(type, x_train, y_train, f_t_train, init_status, ss, func, func.grad, cc)
 {
   dat_tmp <- data.frame(x_train);
@@ -87,6 +94,7 @@ cal.neggrad <- function(type, x_train, y_train, f_t_train, init_status, ss, func
   return(dat_tmp)
 }
 
+
 cal.ss <- function(type, f_t_train, y_train,  cc, bb) {
 
   ss <-1
@@ -104,6 +112,7 @@ cal.ss <- function(type, f_t_train, y_train,  cc, bb) {
 
   return(ss)
 }
+
 
 cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, init_status, cc = 1.547, bb  = 0.5) {
   switch(type,
@@ -171,44 +180,51 @@ cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.g
          })
 }
 
+#' Boost
+#'
+#' A function to fit RRBoost which includes options to fit L2Boost, LADBoost, MBoost, Robloss, and SBoost
+#'
+#' A function to fit RRBoost which includes options to fit L2Boost, LADBoost, MBoost, Robloss, and SBoost
+#'
+#'@param x_train predictor matrix for training data (matrix/dataframe)
+#'@param y_train response vector for training data (vector/dataframe)
+#'@param x_val predictor matrix for validation data (matrix/dataframe)
+#'@param y_train response vector for validation data (vector/dataframe)
+#'@param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
+#'@param y_test response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)
+#'@param type type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)
+#'@param error types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)
+#'@param y_init the initial estimator, "median" or "LADTree" (string)
+#'@param  value of the shrinkage shrinkage parameter (numeric)
+#'@param max_depth the maximum depth of the tree learners (numeric)
+#'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
+#'@param control control parameters specified with Boost.control()
+#'@return A list with the following components:
+#'
+#' \item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
+#' \item{control}{the input control parameters}
+#' \item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
+#' \item{shrinkage}{the input shrinkage parameter}
+#' \item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
+#' \item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }
+#' \item{f_train_init}{a vector of initialized estimator of the training data}
+#' \item{alpha}{a vector of base learners' coefficients}
+#' \item{early_stop_idx}{early stopping iteration}
+#' \item{when_init}{the early stopping time of the first stage of RRBoost (returned if type = "RRBoost)}
+#' \item{ss_train}{the S-estimator of scale evaluated on the training data}
+#' \item{loss_train}{a vector of training loss values}
+#' \item{loss_val}{a vector of validation loss values}
+#' \item{err_val}{a vector of validation aad error}
+#' \item{err_train}{a vector of training aad error}
+#' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
+#' \item{res_mad}{mad of residuals at early stopping time}
+#' \item{f_train}{matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
+#' \item{f_val}{matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
+#' \item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
+#' \item{var_importance}{vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
 
-#' Classic Backfitting
-#'
-#' This function computes the standard backfitting algorithm for additive models.
-#'
-#' This function computes the standard backfitting algorithm for additive models,
-#' using a squared loss function and local polynomial smoothers.
-#'
-#' @param Xp a matrix (n x p) containing the explanatory variables
-#' @param yp vector of responses (missing values are allowed)
-#' @param point matrix of points where predictions will be computed and returned.
-#' @param windows vector of bandwidths for the local polynomial smoother,
-#' one per explanatory variable.
-#' @param epsilon convergence criterion. Maximum allowed relative difference between
-#' consecutive estimates
-#' @param degree degree of the local polynomial smoother. Defaults to \code{0} (local constant).
-#' @param prob vector of probabilities of observing each response (length n).
-#' Defaults to \code{NULL} and in that case it is ignored.
-#' @param max.it Maximum number of iterations for the algorithm.
-#'
-#' @return A list with the following components:
-#' \item{alpha}{Estimate for the intercept.}
-#' \item{g.matrix }{Matrix of estimated additive components (n by p).}
-#' \item{prediction }{Matrix of estimated additive components for the points listed in
-#' the argument \code{point}.}
-#'
-#' @references Hasie, TJ and Tibshirani, RJ. Generalized Additive Models, 1990. Chapman
-#' and Hall, London.
-#'
+
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
-#'
-#' @examples
-#' data(airquality)
-#' x <- airquality
-#' x <- x[complete.cases(x), c('Ozone', 'Solar.R', 'Wind', 'Temp')]
-#' y <- as.vector(x$Ozone)
-#' x <- as.matrix(x[, c('Solar.R', 'Wind', 'Temp')])
-#' tmp <- backf.cl(Xp = x, yp=y, windows=c(130, 9, 10), degree=1)
 #'
 #' @export
 #'
@@ -454,9 +470,36 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   return(model)
 }
 
-
-
-Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost", error = "rmse", shrinkage = 1, niter = 100, max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1,2,3,4), min_leaf_size_init_set = c(10,20,30), control = Boost.control()){
+#' Boost.validation
+#'
+#' A function to fit RRBoost where the initialization parameters are chosen by validation
+#'
+#' A function to fit RRBoost where the initialization parameters are chosen by validation
+#'
+#'@param x_train predictor matrix for training data (matrix/dataframe)
+#'@param y_train response vector for training data (vector/dataframe)
+#'@param x_val predictor matrix for validation data (matrix/dataframe)
+#'@param y_train response vector for validation data (vector/dataframe)
+#'@param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
+#'@param y_test response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)
+#'@param error types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)
+#'@param y_init the initial estimator, "median" or "LADTree" (string)
+#'@param value of the shrinkage shrinkage parameter (numeric)
+#'@param max_depth the maximum depth of the tree learners (numeric)
+#'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
+#'@param control control parameters specified with Boost.control()
+#'@param max_depth_init_set a vector of possible values of the maximum depth of the initial LADTree that the algorithm choses from
+#'@param min_leaf_size_init_set a vector of possible values of the minimum observations per node of the initial LADTree that the algorithm choses from
+#'
+#'@return A list with the following components:
+#'
+#' \item{param}{a vector of selected initialization parameters (return (0,0) if selected initialization is the median of the training responses)}
+#' \item{model}{an object returned by Boost that is trained with selected initialization parameters}
+#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#'
+#' @export
+#'
+Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost", error = c("rmse","aad"), shrinkage = 1, niter = 1000, max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1,2,3,4), min_leaf_size_init_set = c(10,20,30), control = Boost.control()){
 
   control_tmp <- control
   if(control$cal_imp == TRUE){
@@ -479,11 +522,13 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
       model_tmp <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error= error,
                                shrinkage = shrinkage,  niter = niter, y_init =  "LADTree", max_depth = max_depth,
                                control= control_tmp)
+      print(c(model_tmp$err_val[model_tmp$early_stop_idx], best_err, min_leaf_size, max_depths))
       if(model_tmp$err_val[model_tmp$early_stop_idx] >= best_err){
          rm(model_tmp)
       }else{
         model_best <- model_tmp
         params <- combs[j, ]
+        best_err <- model_tmp$err_val[model_tmp$early_stop_idx]
         rm(model_tmp)
       }
     }
@@ -499,7 +544,6 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
   }
   return(list(model = model_best, params =  params))
 }
-
 
 cal_error <- function(control, error_type, f_t_test, y_test){
   if(error_type == "rmse"){
@@ -517,6 +561,25 @@ cal_error <- function(control, error_type, f_t_test, y_test){
 }
 
 
+#' cal_predict
+#'
+#' A function to make predictions and calculate test error given an object returned by Boost and test data
+#'
+#' A function to make predictions and calculate test error given an object returned by Boost and test data
+#'
+#'@param model an object returned by Boost
+#'@param x_test predictor matrix for test data (matrix/dataframe)
+#'@param y_test response vector for test data (vector/dataframe)
+#'@return The input model list with the following additional components:
+#'
+#' \item{f_t_test}{predicted values with model using x_test as the predictors}
+#' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
+#' \item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE in control)}
+#' \item{value}{a vector of test error evaluated at early stopping time}
+
+#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#'
+#' @export
 cal_predict <- function(model, x_test, y_test){
 
   if(class(x_test) == "numeric") {
@@ -578,6 +641,20 @@ cal_predict <- function(model, x_test, y_test){
   return(model)
 }
 
+#' cal_imp
+#'
+#' A function to calculate variable importance given an object returned by Boost and training data
+#'
+#' A function to calculate variable importance given an object returned by Boost and training data
+#'
+#'@param model an object returned by Boost
+#'@param x_train predictor matrix for test data (matrix/dataframe)
+#'@param y_train response vector for test data (vector/dataframe)
+#'@return The input model list with an additional component of
+#' \item{var_importance}{a vector of permutation variable importance}
+#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#'
+#' @export
 cal_imp <- function(model,  x_train, y_train){
 
   var_imp <-  data.frame(t(rep(0, ncol(x_train))))

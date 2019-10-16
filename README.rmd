@@ -1,0 +1,72 @@
+---
+title: "RRBoost: a robust boosting algorithm for regression problems"
+author: "Xiaomeng Ju"
+date: '2019-10-08'
+output: github_document
+---
+
+
+This repository contains `R` (in folder src)  code implementing robust boosting algorithms to solve regression problems. Below is an example illustrating its use in  `R`. We first install the package
+
+```{r initial}
+library(devtools)
+library(rpart)
+#devtools::install_github("xmengju/RRBoost",auth_token = "09d286ef07a9e052c6aa0f02729a137250b91a76",force = TRUE)
+library(rrboost)
+```
+
+We apply it to the airfoil data set with added outliers.  The data set is split into 60% training, 20% validation, and 20% test. In addition, 20% oasymmetric outliers are added to the training and validation set. 
+
+```{r datasetup}
+set.seed(0)
+load("data/airfoil.RData")
+idx_test <- sample.int(n = nrow(x), size = floor(.2*nrow(x)), replace = F)
+idx_train <- sample(setdiff(1:nrow(x),idx_test), size = floor(.6*nrow(x)))
+idx_val <- setdiff(1:nrow(x),c(idx_test, idx_train)) 
+outliers <- sample(c(idx_train, idx_val), round(0.2*length(c(idx_train, idx_val))))
+y[outliers] <- y[outliers] + rnorm(length(outliers), -20, 0.1)
+```
+
+We first calculate the RRBoost estimator initialized with the median of training ys. 
+```{r median}
+model_RRBoost_median = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = c("rmse"), y_init = "median", shrinkage = 1, max_depth = 1, niter = 1000, control = Boost.control())
+print(model_RRBoost_median$value)
+```
+
+Then we calculate the RRBoost estimator initialized with an LADTree, where the parameters of LADTree are selected by a validation procedure.  The possibly values of the combination of parameters are specified with parameters 'max_depth_init_set' and 'min_leaf_size_init_set'. 
+
+```{r cvLADTree}
+  model_RRBoost_cv_LADTree = Boost.validation(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost", error = "rmse", y_init = "LADTree", shrinkage = 1, max_depth = 1, niter = 1000, max_depth_init_set = c(1,2,3,4,5), min_leaf_size_init_set = c(10,20,30), control = Boost.control())
+```
+
+We compare error at early stopping time: ("rmse" as we previously specified)
+```{r evaluation}
+ print(model_RRBoost_median$value)
+ print(model_RRBoost_cv_LADTree$model$value)
+```
+
+and permutation variable importance:
+```{r variable importance}
+ print(model_RRBoost_median$var_importance)
+ print(model_RRBoost_cv_LADTree$model$var_importance)
+```
+
+The  values of the parameters of LADTree selected via validation are
+```{r selected value}
+ print(model_RRBoost_cv_LADTree$params)
+```
+
+To train RRBoost with user-specified parameters of the initial tree, run 
+
+```{r LADTree}
+ model_RRBoost_LADTree = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "LADTree", shrinkage = 1, max_depth = 1, niter = 1000, control = Boost.control(max_depth_init = 2,min_leaf_size_init = 20 ))
+```
+
+We can also separate training, predicting, and calculating variable importance 
+```{r separate}
+ model = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = NULL, y_test = NULL, type = "RRBoost",error = "rmse", y_init = "LADTree", shrinkage = 1, max_depth = 1, niter = 1000, control = Boost.control(cal_imp = FALSE, save_tree = TRUE, make_prediction = FALSE, max_depth_init = 2,min_leaf_size_init = 20))
+ model <- cal_predict(model, x_test = x[idx_test,], y_test = y[idx_test])
+ model <-  cal_imp(model, x_train = x[idx_train,], y_train = y[idx_train])
+ print(model$value)
+ print(model$var_importance)
+ ```
