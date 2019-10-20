@@ -27,309 +27,198 @@ body {
 
 <h1 id="rrboost-a-robust-boosting-algorithm-for-regression-problems">RRBoost: a robust boosting algorithm for regression problems</h1>
 <p>Xiaomeng Ju<br />2019-10-08</p>
-<p>This repository contains <code>R</code> (in folder src) code implementing robust boosting algorithms to solve regression problems. Below is an example illustrating its use in <code>R</code>. We first install the package</p>
+<p>This repository contains <code>R</code>code implementing robust boosting algorithms to solve regression problems. Before illustrating its usage, we load needed R packages and install the rrboost package.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(devtools)</code></pre>
 <pre><code>## Loading required package: usethis</code></pre>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rpart)
-<span class="co">#devtools::install_github(&quot;xmengju/RRBoost&quot;,auth_token = &quot;09d286ef07a9e052c6aa0f02729a137250b91a76&quot;,force = TRUE)</span>
+<span class="co">#devtools::install_github(&quot;xmengju/RRBoost&quot;,auth_token =&quot;09d286ef07a9e052c6aa0f02729a137250b91a76&quot;,force = TRUE)</span>
 <span class="kw">library</span>(rrboost)</code></pre>
-<p>We apply it to the airfoil data set with added outliers. The data set is split into 60% training, 20% validation, and 20% test. In addition, 20% oasymmetric outliers are added to the training and validation set.</p>
+<p>To demonstrate the usage of the package, we will use a standard build-in dataset airfoil, which consists of 6 variables and 1503 observations. Let's print out the first 5 observations here.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">data</span>(<span class="st">&quot;airfoil&quot;</span>)
+<span class="kw">head</span>(<span class="kw">cbind</span>(x,y))</code></pre>
+<pre><code>##   frequency angle chord_length velocity  thickness       y
+## 1       800     0       0.3048     71.3 0.00266337 126.201
+## 2      1000     0       0.3048     71.3 0.00266337 125.201
+## 3      1250     0       0.3048     71.3 0.00266337 125.951
+## 4      1600     0       0.3048     71.3 0.00266337 127.591
+## 5      2000     0       0.3048     71.3 0.00266337 127.461
+## 6      2500     0       0.3048     71.3 0.00266337 125.571</code></pre>
+<p>The goal here is to predict the response <code>y</code> using the 5 predictor variables. We split the dataset into 60% training, 20% validation, and 20% test sets. The indices of training, validation, and test sets are sampled as below.</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">0</span>)
-<span class="kw">load</span>(<span class="st">&quot;data/airfoil.RData&quot;</span>)
 idx_test &lt;-<span class="st"> </span><span class="kw">sample.int</span>(<span class="dt">n =</span> <span class="kw">nrow</span>(x), <span class="dt">size =</span> <span class="kw">floor</span>(.<span class="dv">2</span>*<span class="kw">nrow</span>(x)), <span class="dt">replace =</span> F)
 idx_train &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="kw">setdiff</span>(<span class="dv">1</span>:<span class="kw">nrow</span>(x),idx_test), <span class="dt">size =</span> <span class="kw">floor</span>(.<span class="dv">6</span>*<span class="kw">nrow</span>(x)))
-idx_val &lt;-<span class="st"> </span><span class="kw">setdiff</span>(<span class="dv">1</span>:<span class="kw">nrow</span>(x),<span class="kw">c</span>(idx_test, idx_train)) 
-outliers &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="kw">c</span>(idx_train, idx_val), <span class="kw">round</span>(<span class="fl">0.2</span>*<span class="kw">length</span>(<span class="kw">c</span>(idx_train, idx_val))))
+idx_val &lt;-<span class="st"> </span><span class="kw">setdiff</span>(<span class="dv">1</span>:<span class="kw">nrow</span>(x),<span class="kw">c</span>(idx_test, idx_train)) </code></pre>
+<p>The aim of RRBoost is to protect the estimator from being affected by outliers. We added 20% oasymmetric outliers to the training and validation set to resemble a contaminated setting.</p>
+<pre class="sourceCode r"><code class="sourceCode r">outliers &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="kw">c</span>(idx_train, idx_val), <span class="kw">round</span>(<span class="fl">0.2</span>*<span class="kw">length</span>(<span class="kw">c</span>(idx_train, idx_val))))
 y[outliers] &lt;-<span class="st"> </span>y[outliers] +<span class="st"> </span><span class="kw">rnorm</span>(<span class="kw">length</span>(outliers), -<span class="dv">20</span>, <span class="fl">0.1</span>)</code></pre>
-<p>We first calculate the RRBoost estimator initialized with the median of training ys.</p>
-<pre class="sourceCode r"><code class="sourceCode r">model_RRBoost_median =<span class="st"> </span><span class="kw">Boost</span>(<span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train], <span class="dt">x_val =</span> x[idx_val,], <span class="dt">y_val =</span> y[idx_val], <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test], <span class="dt">type =</span> <span class="st">&quot;RRBoost&quot;</span>,<span class="dt">error =</span> <span class="kw">c</span>(<span class="st">&quot;rmse&quot;</span>), <span class="dt">y_init =</span> <span class="st">&quot;median&quot;</span>, <span class="dt">shrinkage =</span> <span class="dv">1</span>, <span class="dt">max_depth =</span> <span class="dv">1</span>, <span class="dt">niter =</span> <span class="dv">1000</span>, <span class="dt">control =</span> <span class="kw">Boost.control</span>())</code></pre>
+<p>The <code>Boost</code> function provides calculation of the <code>RRBoost</code> estimator, as well as previously proposed <code>L2Boost</code>,<code>LADBoost</code>,<code>MBoost</code>,and <code>Robloss</code>. For <code>RRBoost</code>, it allows user to define the initialization of the estimator: <code>median</code> or <code>LADTree</code>. We also provide a <code>Boost.validation</code> function to select the parameters of <code>LADTree</code> based on a the performance on the validation set.</p>
+<p>Let us see how to use the functions to calculate the RRBoost with different initializations: initialized with the median of training ys (<code>model_RRBoost_median</code>), a LADTree with user specified parameters (<code>model_RRBoost_LADTree</code>), and a LADTree whose paramsters are selected by validation (<code>model_RRBoost_cv_LADTree</code>). We chose <code>rmse</code> as the type error what we measure on the test set. The other options are <code>aad</code>, <code>trmse</code>, and <code>rrmse</code> (see package descriotion), which can be used as a reference when the the user suspects the test set also has outliers.</p>
+<p>The boosting estimators are calculated using decision stumps (<code>max_depth = 1</code>) as weak learners over 1000 iterations (<code>niter = 1000</code>). Setting <code>make_prediction =  TRUE, cal_imp = TRUE</code> in <code>control</code> allows the function to return predictions and permutation variable importance.</p>
+<p>For <code>model_RRBoost_LADTree</code>, we specifiy the maximum depth of the LADTree <code>max_depth_init = 2</code> and the minimum number of observations per node <code>min_leaf_size_init = 20</code>.</p>
+<p>For <code>model_RRBoost_cv_LADTree</code>, we set the possible combinations of parameters <code>max_depth_init_set = c(1,2,3,4,5)</code> and<code>min_leaf_size_init_set = c(10,20,30)</code>.</p>
+<pre class="sourceCode r"><code class="sourceCode r">model_RRBoost_median =<span class="st"> </span><span class="kw">Boost</span>(<span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train], <span class="dt">x_val =</span> x[idx_val,], <span class="dt">y_val =</span> y[idx_val], <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test], <span class="dt">type =</span> <span class="st">&quot;RRBoost&quot;</span>,<span class="dt">error =</span> <span class="st">&quot;rmse&quot;</span>, <span class="dt">y_init =</span> <span class="st">&quot;median&quot;</span>, <span class="dt">max_depth =</span> <span class="dv">1</span>, <span class="dt">niter =</span> <span class="dv">1000</span>, <span class="dt">control =</span> <span class="kw">Boost.control</span>(<span class="dt">make_prediction =</span>  <span class="ot">TRUE</span>, <span class="dt">cal_imp =</span> <span class="ot">TRUE</span>))</code></pre>
 <pre><code>## [1] &quot;RRBoost&quot;
-## [1] &quot;iteration&quot; &quot;100&quot;      
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(model_RRBoost_median$value)</code></pre>
-<pre><code>## [1] 9.051671</code></pre>
-<p>Then we calculate the RRBoost estimator initialized with an LADTree, where the parameters of LADTree are selected by a validation procedure. The possibly values of the combination of parameters are specified with parameters 'max_depth_init_set' and 'min_leaf_size_init_set'.</p>
-<pre class="sourceCode r"><code class="sourceCode r">  model_RRBoost_cv_LADTree =<span class="st"> </span><span class="kw">Boost.validation</span>(<span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train], <span class="dt">x_val =</span> x[idx_val,], <span class="dt">y_val =</span> y[idx_val], <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test], <span class="dt">type =</span> <span class="st">&quot;RRBoost&quot;</span>, <span class="dt">error =</span> <span class="st">&quot;rmse&quot;</span>, <span class="dt">y_init =</span> <span class="st">&quot;LADTree&quot;</span>, <span class="dt">shrinkage =</span> <span class="dv">1</span>, <span class="dt">max_depth =</span> <span class="dv">1</span>, <span class="dt">niter =</span> <span class="dv">1000</span>, <span class="dt">max_depth_init_set =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>), <span class="dt">min_leaf_size_init_set =</span> <span class="kw">c</span>(<span class="dv">10</span>,<span class="dv">20</span>,<span class="dv">30</span>), <span class="dt">control =</span> <span class="kw">Boost.control</span>())</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"> model_RRBoost_LADTree =<span class="st"> </span><span class="kw">Boost</span>(<span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train], <span class="dt">x_val =</span> x[idx_val,], <span class="dt">y_val =</span> y[idx_val], <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test], <span class="dt">type =</span> <span class="st">&quot;RRBoost&quot;</span>,<span class="dt">error =</span> <span class="st">&quot;rmse&quot;</span>, <span class="dt">y_init =</span> <span class="st">&quot;LADTree&quot;</span>, <span class="dt">max_depth =</span> <span class="dv">1</span>, <span class="dt">niter =</span> <span class="dv">1000</span>, <span class="dt">control =</span> <span class="kw">Boost.control</span>(<span class="dt">max_depth_init =</span> <span class="dv">2</span>,<span class="dt">min_leaf_size_init =</span> <span class="dv">20</span>, <span class="dt">make_prediction =</span>  <span class="ot">TRUE</span>, <span class="dt">cal_imp =</span> <span class="ot">TRUE</span>))</code></pre>
 <pre><code>## [1] &quot;RRBoost&quot;
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  2 min_leaf_size_init =  20&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
+## [1] &quot;iteration&quot; &quot;1000&quot;</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r">model_RRBoost_cv_LADTree =<span class="st"> </span><span class="kw">Boost.validation</span>(<span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train], <span class="dt">x_val =</span> x[idx_val,], <span class="dt">y_val =</span> y[idx_val], <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test], <span class="dt">type =</span> <span class="st">&quot;RRBoost&quot;</span>, <span class="dt">error =</span> <span class="st">&quot;rmse&quot;</span>, <span class="dt">y_init =</span> <span class="st">&quot;LADTree&quot;</span>, <span class="dt">max_depth =</span> <span class="dv">1</span>, <span class="dt">niter =</span> <span class="dv">1000</span>, <span class="dt">max_depth_init_set =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>), <span class="dt">min_leaf_size_init_set =</span> <span class="kw">c</span>(<span class="dv">10</span>,<span class="dv">20</span>,<span class="dv">30</span>), <span class="dt">control =</span> <span class="kw">Boost.control</span>(<span class="dt">make_prediction =</span>  <span class="ot">TRUE</span>, <span class="dt">cal_imp =</span> <span class="ot">TRUE</span>))</code></pre>
+<pre><code>## [1] &quot;RRBoost&quot;
+## [1] &quot;iteration&quot; &quot;200&quot;      
+## [1] &quot;iteration&quot; &quot;400&quot;      
+## [1] &quot;iteration&quot; &quot;600&quot;      
+## [1] &quot;iteration&quot; &quot;800&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;1&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;10&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  1 min_leaf_size_init =  10&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  6.314544  8.205009 10.000000  1.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;1&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;20&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  1 min_leaf_size_init =  20&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  6.314544  6.314544 20.000000  1.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;1&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;30&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  1 min_leaf_size_init =  30&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  6.314544  6.314544 30.000000  1.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;2&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;10&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  2 min_leaf_size_init =  10&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  6.256681  6.314544 10.000000  2.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;2&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;20&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  2 min_leaf_size_init =  20&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  6.256681  6.256681 20.000000  2.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;2&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;30&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  2 min_leaf_size_init =  30&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  6.256681  6.256681 30.000000  2.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;3&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;10&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  3 min_leaf_size_init =  10&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  5.994374  6.256681 10.000000  3.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;3&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;20&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  3 min_leaf_size_init =  20&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  6.001818  5.994374 20.000000  3.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;3&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;30&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  3 min_leaf_size_init =  30&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  6.068829  5.994374 30.000000  3.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;4&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;10&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  4 min_leaf_size_init =  10&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  5.844458  5.994374 10.000000  4.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;4&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;20&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  4 min_leaf_size_init =  20&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  5.906432  5.844458 20.000000  4.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;4&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;30&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  4 min_leaf_size_init =  30&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  5.900764  5.844458 30.000000  4.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;5&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;10&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  5 min_leaf_size_init =  10&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  5.632800  5.844458 10.000000  5.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;5&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;20&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  5 min_leaf_size_init =  20&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  5.815917  5.632800 20.000000  5.000000
 ## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;5&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;30&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  5 min_leaf_size_init =  30&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
-## [1] &quot;iteration&quot; &quot;1000&quot;     
-## [1]  5.971944  5.632800 30.000000  5.000000</code></pre>
-<p>We compare error at early stopping time: (&quot;rmse&quot; as we previously specified)</p>
+## [1] &quot;iteration&quot; &quot;1000&quot;</code></pre>
+<p>In order to compare the predictive performance of the models, we access the the <code>value</code> field of the returned objects, which is the test error evaluated at the early stopping time. The early stopping time is determined by the validation set to avoid overfitting (see paper for more details). In this example, we specified the type of error to be <code>rmse</code>, the returned <code>value</code> will be the test <code>rmse</code> evaluated at the early stopping time. If we let the function return multiple types of errors, <code>value</code> will be a vector of those errors.</p>
+<p>We compare <code>value</code> of different initializations</p>
 <pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_median$value)</code></pre>
 <pre><code>## [1] 9.051671</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_cv_LADTree$model$value)</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_LADTree$value)</code></pre>
+<pre><code>## [1] 4.937753</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_cv_LADTree$value)</code></pre>
 <pre><code>## [1] 3.917782</code></pre>
-<p>and permutation variable importance:</p>
-<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_median$var_importance)</code></pre>
-<pre><code>##   frequency angle chord_length   velocity thickness
-## 1  1.537253     0            0 0.03372489 0.4712679</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_cv_LADTree$model$var_importance)</code></pre>
-<pre><code>##   frequency     angle chord_length  velocity thickness
-## 1  4.598502 0.6875571    0.9338656 0.2610984  3.823986</code></pre>
-<p>The values of the parameters of LADTree selected via validation are</p>
+<p>The validation selected LADTree parameters are</p>
 <pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_cv_LADTree$params)</code></pre>
 <pre><code>##    min_leafs max_depths
 ## 13        10          5</code></pre>
-<p>To train RRBoost with user-specified parameters of the initial tree, run</p>
-<pre class="sourceCode r"><code class="sourceCode r"> model_RRBoost_LADTree =<span class="st"> </span><span class="kw">Boost</span>(<span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train], <span class="dt">x_val =</span> x[idx_val,], <span class="dt">y_val =</span> y[idx_val], <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test], <span class="dt">type =</span> <span class="st">&quot;RRBoost&quot;</span>,<span class="dt">error =</span> <span class="st">&quot;rmse&quot;</span>, <span class="dt">y_init =</span> <span class="st">&quot;LADTree&quot;</span>, <span class="dt">shrinkage =</span> <span class="dv">1</span>, <span class="dt">max_depth =</span> <span class="dv">1</span>, <span class="dt">niter =</span> <span class="dv">1000</span>, <span class="dt">control =</span> <span class="kw">Boost.control</span>(<span class="dt">max_depth_init =</span> <span class="dv">2</span>,<span class="dt">min_leaf_size_init =</span> <span class="dv">20</span> ))</code></pre>
+<p>When setting <code>cal_imp = TRUE</code> in <code>control</code>, we have access to the variable importance that is calculated with a permutation procedure described in the paper. Our best prediction model <code>model_RRBoost_cv_LADTree</code> shows that <code>frequency</code> and <code>thickness</code> are the top 2 most important variables.</p>
+<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_median$var_importance)</code></pre>
+<pre><code>##   frequency angle chord_length   velocity thickness
+## 1  1.537253     0            0 0.03372489 0.4712679</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_LADTree$var_importance)</code></pre>
+<pre><code>##   frequency      angle chord_length  velocity thickness
+## 1  3.536077 0.06884003    0.7122387 0.2858896  3.106163</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model_RRBoost_cv_LADTree$var_importance)</code></pre>
+<pre><code>##   frequency     angle chord_length  velocity thickness
+## 1   4.27229 0.9042215     1.000275 0.2470756  3.689421</code></pre>
+<p>In the package, we also provide a way that separates training, making predictions, and calculating variable importance. It allows the flexiblity to make predictions on multiple test sets and calculate variable importance when needed. Note that to allow this separation, <code>save_tree = TRUE</code> is required in <code>control</code>. This saves the trainer weak learners, which are needed for calculating prediction and variable importance, as a model component.</p>
+<pre class="sourceCode r"><code class="sourceCode r"> model =<span class="st"> </span><span class="kw">Boost</span>(<span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train], <span class="dt">x_val =</span> x[idx_val,], <span class="dt">y_val =</span> y[idx_val], <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test], <span class="dt">type =</span> <span class="st">&quot;RRBoost&quot;</span>,<span class="dt">error =</span> <span class="st">&quot;rmse&quot;</span>, <span class="dt">y_init =</span> <span class="st">&quot;LADTree&quot;</span>, <span class="dt">max_depth =</span> <span class="dv">1</span>, <span class="dt">niter =</span> <span class="dv">1000</span>, <span class="dt">control =</span> <span class="kw">Boost.control</span>(<span class="dt">max_depth_init =</span> <span class="dv">2</span>,<span class="dt">min_leaf_size_init =</span> <span class="dv">20</span>,<span class="dt">save_tree =</span> <span class="ot">TRUE</span>, <span class="dt">make_prediction =</span>  <span class="ot">FALSE</span>, <span class="dt">cal_imp =</span> <span class="ot">FALSE</span>))</code></pre>
 <pre><code>## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;2&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;20&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
+## [1] &quot;max_depth_init =  2 min_leaf_size_init =  20&quot;
 ## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
 ## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
 ## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
 ## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
 ## [1] &quot;iteration&quot; &quot;1000&quot;</code></pre>
-<p>We can also separate training, predicting, and calculating variable importance</p>
-<pre class="sourceCode r"><code class="sourceCode r"> model =<span class="st"> </span><span class="kw">Boost</span>(<span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train], <span class="dt">x_val =</span> x[idx_val,], <span class="dt">y_val =</span> y[idx_val], <span class="dt">x_test =</span> <span class="ot">NULL</span>, <span class="dt">y_test =</span> <span class="ot">NULL</span>, <span class="dt">type =</span> <span class="st">&quot;RRBoost&quot;</span>,<span class="dt">error =</span> <span class="st">&quot;rmse&quot;</span>, <span class="dt">y_init =</span> <span class="st">&quot;LADTree&quot;</span>, <span class="dt">shrinkage =</span> <span class="dv">1</span>, <span class="dt">max_depth =</span> <span class="dv">1</span>, <span class="dt">niter =</span> <span class="dv">1000</span>, <span class="dt">control =</span> <span class="kw">Boost.control</span>(<span class="dt">cal_imp =</span> <span class="ot">FALSE</span>, <span class="dt">save_tree =</span> <span class="ot">TRUE</span>, <span class="dt">make_prediction =</span> <span class="ot">FALSE</span>, <span class="dt">max_depth_init =</span> <span class="dv">2</span>,<span class="dt">min_leaf_size_init =</span> <span class="dv">20</span>))</code></pre>
-<pre><code>## [1] &quot;RRBoost&quot;
-## [1] &quot;max_depth_init&quot;     &quot;2&quot;                  &quot;min_leaf_size_init&quot;
-## [4] &quot;20&quot;                
-## [1] &quot;iteration&quot; &quot;100&quot;      
-## [1] &quot;iteration&quot; &quot;200&quot;      
-## [1] &quot;iteration&quot; &quot;300&quot;      
-## [1] &quot;iteration&quot; &quot;400&quot;      
-## [1] &quot;iteration&quot; &quot;500&quot;      
-## [1] &quot;iteration&quot; &quot;600&quot;      
-## [1] &quot;iteration&quot; &quot;700&quot;      
-## [1] &quot;iteration&quot; &quot;800&quot;      
-## [1] &quot;iteration&quot; &quot;900&quot;      
-## [1] &quot;iteration&quot; &quot;1000&quot;</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"> model &lt;-<span class="st"> </span><span class="kw">cal_predict</span>(model, <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test])
- model &lt;-<span class="st">  </span><span class="kw">cal_imp</span>(model, <span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train])
- <span class="kw">print</span>(model$value)</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"> prediction &lt;-<span class="st"> </span><span class="kw">cal_predict</span>(model, <span class="dt">x_test =</span> x[idx_test,], <span class="dt">y_test =</span> y[idx_test])
+ var_importance &lt;-<span class="st">  </span><span class="kw">cal_imp</span>(model, <span class="dt">x_train =</span> x[idx_train,], <span class="dt">y_train =</span> y[idx_train])
+ <span class="kw">print</span>(prediction$value)</code></pre>
 <pre><code>## [1] 4.937753</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(model$var_importance)</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">print</span>(var_importance)</code></pre>
 <pre><code>##   frequency      angle chord_length  velocity thickness
 ## 1  3.027903 0.08711746    0.7676057 0.3144959  2.981596</code></pre>
 

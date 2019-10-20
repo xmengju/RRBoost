@@ -8,7 +8,6 @@ func.tukey.tmp <- function(r, cc= 4.685) {
 cal_efficiency<- function(cc_2){
   cc_1 <- RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi
   bb <- 0.5
-
   sigma0 <- 1
   term_1 <- 2*integrate(function(a) {func.tukey.tmp(a/sigma0, cc = cc_2)*dnorm(a)},lower=-Inf, upper=+Inf)$value
   term_2 <-  integrate(function(a) {func.tukey.grad(a/sigma0, cc = cc_2)* (a/sigma0)*dnorm(a)},lower=-Inf, upper=+Inf)$value

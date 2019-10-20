@@ -14,7 +14,6 @@ cal_imp(model, x_train, y_train)
 \item{y_train}{response vector for test data (vector/dataframe)}
 }
 \value{
-The input model list with an additional component of
 \item{var_importance}{a vector of permutation variable importance}
 }
 \description{

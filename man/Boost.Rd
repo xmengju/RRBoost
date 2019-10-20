@@ -5,8 +5,8 @@
 \title{Boost}
 \usage{
 Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
-  error = c("rmse", "aad"), shrinkage = 1, niter = 200,
-  y_init = "median", max_depth = 1, control = Boost.control())
+  error = c("rmse", "aad"), niter = 200, y_init = "median",
+  max_depth = 1, control = Boost.control())
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -41,20 +41,17 @@ A list with the following components:
 \item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
 \item{control}{the input control parameters}
 \item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
-\item{shrinkage}{the input shrinkage parameter}
 \item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
 \item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }
 \item{f_train_init}{a vector of initialized estimator of the training data}
 \item{alpha}{a vector of base learners' coefficients}
 \item{early_stop_idx}{early stopping iteration}
 \item{when_init}{the early stopping time of the first stage of RRBoost (returned if type = "RRBoost)}
-\item{ss_train}{the S-estimator of scale evaluated on the training data}
 \item{loss_train}{a vector of training loss values}
 \item{loss_val}{a vector of validation loss values}
 \item{err_val}{a vector of validation aad error}
 \item{err_train}{a vector of training aad error}
 \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
-\item{res_mad}{mad of residuals at early stopping time}
 \item{f_train}{matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
 \item{f_val}{matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
 \item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}

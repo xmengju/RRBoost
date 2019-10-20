@@ -96,33 +96,33 @@ func.huber.grad.prime <- function(r, cc = 0.98) {
 #   res <- sum(sin(r[abs(r) <= pi*cc]/(2*cc))^2) + sum((abs(r) > pi*cc))
 #   return (res )
 # }
-# 
+#
 # func.andrew.grad <- function(r, cc = 1.339) {
 #   res <- 0 + 0.5*sin(r*(abs(r) <= cc*pi)/cc)/cc
 #   return(res)
 # }
-# 
+#
 # func.andrew.grad.prime <- function(r, cc = 1.339) {
 #   return(0 + 0.5*(abs(r)<=cc*pi)*cos(r/cc)*(1/cc^2))
 # }
-# 
-# 
+#
+#
 # func.welsch <- function(r, cc= 2.11) {
-# 
+#
 #   res <- sum(1 - exp(- (r/cc)^2/2))
 #   return (res )
 # }
-# 
+#
 # func.welsch.grad <- function(r, cc = 2.11) {
 #   res <- r*exp(-(r/cc)^2/2)/(cc^2)
 #   return(res)
 # }
-# 
+#
 # func.welsch.grad.prime <- function(r, cc = 2.11) {
-# 
+#
 #   return((1 - (r/cc)^2)*exp(-(r/cc)^2/2)/cc^2)
 # }
-# 
+#
 
 
 # calculate efficiency  (for tukey's loss and Huber's loss)

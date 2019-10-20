@@ -5,10 +5,10 @@
 \title{Boost.validation}
 \usage{
 Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
-  type = "RRBoost", error = c("rmse", "aad"), shrinkage = 1,
-  niter = 1000, max_depth = 1, y_init = "LADTree",
-  max_depth_init_set = c(1, 2, 3, 4), min_leaf_size_init_set = c(10,
-  20, 30), control = Boost.control())
+  type = "RRBoost", error = c("rmse", "aad"), niter = 1000,
+  max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1, 2, 3,
+  4), min_leaf_size_init_set = c(10, 20, 30),
+  control = Boost.control())
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -40,10 +40,9 @@ Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
 \item{value}{of the shrinkage shrinkage parameter (numeric)}
 }
 \value{
-A list with the following components:
-
+A list with components
+\item{the components of model}{an object returned by Boost that is trained with selected initialization parameters}
 \item{param}{a vector of selected initialization parameters (return (0,0) if selected initialization is the median of the training responses)}
-\item{model}{an object returned by Boost that is trained with selected initialization parameters}
 }
 \description{
 A function to fit RRBoost where the initialization parameters are chosen by validation

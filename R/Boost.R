@@ -5,6 +5,7 @@
 #' Various parameters that control aspects of the `Boost` fit.
 #'
 #' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
+#' @param shrinkage the input shrinkage parameter}
 #' @param cc_s  tuning constant of tukey's loss in SBoost (numeric)
 #' @param eff_s  normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)
 #' @param bb  breakdown point of the SBoost estimator (numeric)
@@ -25,7 +26,7 @@
 #' @export
 #'
 
-Boost.control <- function(n_init = 100, cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE){
+Boost.control <- function(n_init = 100, shrinkage = 1, cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE){
 
   if(length(cc_s) == 0){
     cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi)
@@ -36,7 +37,7 @@ Boost.control <- function(n_init = 100, cc_s  = NULL,  eff_m= NULL, bb = 0.5, tr
   }
   cc_m <-  as.numeric(RobStatTM::lmrobdet.control(efficiency=eff_m, family='bisquare')$tuning.psi)
 
-  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree))
+  return(list(n_init = n_init, shrinkage = shrinkage,   cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree))
 }
 
 init.boosting <- function(type)
@@ -204,37 +205,32 @@ cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.g
 #' \item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
 #' \item{control}{the input control parameters}
 #' \item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
-#' \item{shrinkage}{the input shrinkage parameter}
 #' \item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
 #' \item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }
 #' \item{f_train_init}{a vector of initialized estimator of the training data}
 #' \item{alpha}{a vector of base learners' coefficients}
 #' \item{early_stop_idx}{early stopping iteration}
 #' \item{when_init}{the early stopping time of the first stage of RRBoost (returned if type = "RRBoost)}
-#' \item{ss_train}{the S-estimator of scale evaluated on the training data}
 #' \item{loss_train}{a vector of training loss values}
 #' \item{loss_val}{a vector of validation loss values}
 #' \item{err_val}{a vector of validation aad error}
 #' \item{err_train}{a vector of training aad error}
 #' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
-#' \item{res_mad}{mad of residuals at early stopping time}
 #' \item{f_train}{matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
 #' \item{f_val}{matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
 #' \item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
 #' \item{var_importance}{vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
-
-
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
 #'
-Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),  shrinkage = 1, niter = 200, y_init = "median",
+Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",
                 max_depth = 1, control = Boost.control()) {
   print(type)
 
   cc <- NA; n_init <- NA;
 
-  tol_iter <- control$tol_iter
+  shrinkage <- control$shrinkage
   save_f <- control$save_f
   save_tree <- control$save_tree
   make_prediction <- control$make_prediction
@@ -305,7 +301,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
         min_leaf_size_init <- control$min_leaf_size_init
       }
 
-    print(c("max_depth_init", max_depth_init,"min_leaf_size_init", min_leaf_size_init))
+    print(paste("max_depth_init = ", max_depth_init,"min_leaf_size_init = ", min_leaf_size_init))
     dat_tmp <- data.frame(x_train, y_train = y_train)
     tree_init <- rpart(y_train~ ., data = dat_tmp,control = rpart.control(maxdepth = max_depth_init, minbucket = min_leaf_size_init, xval = 0, cp = -Inf), method = alist)
     f_train_early <- f_train_init <- f_t_train <- predict(tree_init, newdata = x_train)
@@ -337,7 +333,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
   for(i in 1:niter) {
 
-    if(i%%100 ==0) {
+    if(i%%200 ==0) {
      print(c("iteration", i))
     }
 
@@ -444,17 +440,22 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     }
   }
 
-  model <- list(type = type, control = control, error = error, y_init = y_init, shrinkage = shrinkage,  tree_init = tree_init, tree_list = tree_list, f_train_init = f_train_init, alpha = alpha,  early_stop_idx = early_stop_idx, when_init = when_init, ss_train = ss_train, loss_train = loss_train, loss_val = loss_val,  err_val = err_val, err_train = err_train, res_mad = mad(f_train_early - y_train))
-
+  model <- list(type = type, control = control, error = error, y_init = y_init,  tree_init = tree_init, tree_list = tree_list, f_train_init = f_train_init, alpha = alpha,  early_stop_idx = early_stop_idx, when_init = when_init, loss_train = loss_train, loss_val = loss_val,  err_val = err_val, err_train = err_train)
   if(make_prediction == TRUE){
-    model <- cal_predict(model, x_test, y_test)
+    res <- cal_predict(model, x_test, y_test)
+    model$f_t_test <- res$f_t_test
+    model$err_test <- res$err_test
+    model$value <- res$value
+    if(save_tree == TRUE){
+      model$f_test <- res$f_test
+    }
   }
 
   train_trmse <- trmse(control$trim_prop,control$trim_c, f_train_early - y_train)
   model$train_trmse <- train_trmse
 
   if(cal_imp == TRUE){
-    model <- cal_imp(model, x_train, y_train)
+    model$var_importance <- cal_imp(model, x_train, y_train)
   }
 
   if(save_tree == FALSE){
@@ -491,15 +492,14 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 #'@param max_depth_init_set a vector of possible values of the maximum depth of the initial LADTree that the algorithm choses from
 #'@param min_leaf_size_init_set a vector of possible values of the minimum observations per node of the initial LADTree that the algorithm choses from
 #'
-#'@return A list with the following components:
-#'
+#'@return A list with components
+#' \item{the components of model}{an object returned by Boost that is trained with selected initialization parameters}
 #' \item{param}{a vector of selected initialization parameters (return (0,0) if selected initialization is the median of the training responses)}
-#' \item{model}{an object returned by Boost that is trained with selected initialization parameters}
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
 #'
-Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost", error = c("rmse","aad"), shrinkage = 1, niter = 1000, max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1,2,3,4), min_leaf_size_init_set = c(10,20,30), control = Boost.control()){
+Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost", error = c("rmse","aad"),  niter = 1000, max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1,2,3,4), min_leaf_size_init_set = c(10,20,30), control = Boost.control()){
 
   control_tmp <- control
   if(control$cal_imp == TRUE){
@@ -507,7 +507,7 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
     control_tmp$save_tree <- TRUE
   }
 
-  model_best <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error = error, shrinkage = shrinkage, niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp)
+  model_best <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error = error,  niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp)
   best_err <- model_best$err_val[model_best$early_stop_idx]
   params = c(0,0)
 
@@ -520,9 +520,9 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
       control_tmp$min_leaf_size_init  <- min_leaf_size
 
       model_tmp <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error= error,
-                               shrinkage = shrinkage,  niter = niter, y_init =  "LADTree", max_depth = max_depth,
+                                niter = niter, y_init =  "LADTree", max_depth = max_depth,
                                control= control_tmp)
-      print(c(model_tmp$err_val[model_tmp$early_stop_idx], best_err, min_leaf_size, max_depths))
+      #print(c(model_tmp$err_val[model_tmp$early_stop_idx], best_err, min_leaf_size, max_depths))
       if(model_tmp$err_val[model_tmp$early_stop_idx] >= best_err){
          rm(model_tmp)
       }else{
@@ -535,14 +535,15 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
   }
 
   if(control$cal_imp == TRUE){
-    model_best = cal_imp(model_best, x_train, y_train)
+    model_best$var_importance = cal_imp(model_best, x_train, y_train)
   }
 
   if(control$save_tree == FALSE){
       model_best$tree_list = NULL
       model_best$tree_init = NULL
   }
-  return(list(model = model_best, params =  params))
+  model_best$params = params
+  return(model_best)
 }
 
 cal_error <- function(control, error_type, f_t_test, y_test){
@@ -570,7 +571,7 @@ cal_error <- function(control, error_type, f_t_test, y_test){
 #'@param model an object returned by Boost
 #'@param x_test predictor matrix for test data (matrix/dataframe)
 #'@param y_test response vector for test data (vector/dataframe)
-#'@return The input model list with the following additional components:
+#'@return A list with with the following components:
 #'
 #' \item{f_t_test}{predicted values with model using x_test as the predictors}
 #' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
@@ -590,7 +591,7 @@ cal_predict <- function(model, x_test, y_test){
 
   type <- model$type
   save_f <- model$control$save_f
-  shrinkage <- model$shrinkage
+  shrinkage <- model$control$shrinkage
   early_stop_idx <- model$early_stop_idx
   when_init <- model$when_init
   n_init <- model$control$n_init
@@ -598,6 +599,7 @@ cal_predict <- function(model, x_test, y_test){
   err_test <- data.frame(matrix(NA, nrow = early_stop_idx, ncol = length(error)))
   colnames(err_test) <- error
   control <- model$control
+  res <- list()
 
   if(save_f == TRUE){
     f_test <- matrix(NA, nrow(x_test), niter)
@@ -633,12 +635,12 @@ cal_predict <- function(model, x_test, y_test){
   }
 
   if(save_f == TRUE){
-    model$f_test <- f_test
+    res$f_test <- f_test
   }
-  model$f_t_test <- f_t_test
-  model$err_test <- err_test
-  model$value <- err_test[early_stop_idx,]
-  return(model)
+  res$f_t_test <- f_t_test
+  res$err_test <- err_test
+  res$value <- err_test[early_stop_idx,]
+  return(res)
 }
 
 #' cal_imp
@@ -650,7 +652,7 @@ cal_predict <- function(model, x_test, y_test){
 #'@param model an object returned by Boost
 #'@param x_train predictor matrix for test data (matrix/dataframe)
 #'@param y_train response vector for test data (vector/dataframe)
-#'@return The input model list with an additional component of
+#'@return
 #' \item{var_importance}{a vector of permutation variable importance}
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
@@ -667,6 +669,7 @@ cal_imp <- function(model,  x_train, y_train){
   type <- model$type
   y_init <- model$y_init
   n_init <- model$control$n_init
+  shrinkage <- model$control$shrinkage
 
   for(j in 1:ncol(x_train)){
     x_train_j <- x_train
@@ -681,22 +684,20 @@ cal_imp <- function(model,  x_train, y_train){
 
     if(type == "RRBoost" & (n_init < early_stop_idx)){
       for(i in 1:when_init){
-        f_t_train_j  <-  f_t_train_j  + alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
+        f_t_train_j  <-  f_t_train_j  + shrinkage * alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
       }
       for(i in (n_init+1):early_stop_idx){
-        f_t_train_j  <-  f_t_train_j  + alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
+        f_t_train_j  <-  f_t_train_j  + shrinkage *alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
       }
     }else{
       for(i in 1:early_stop_idx){
-        f_t_train_j  <-  f_t_train_j  + alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
+        f_t_train_j  <-  f_t_train_j  + shrinkage *alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
       }
     }
     var_imp[j] <-  rmse(f_t_train_j[idx] - y_train[idx]) - train_trmse$trmse
   }
-
-  model$var_importance <- var_imp
-  colnames(model$var_importance)<- colnames(x_train)
-  return(model)
+  colnames(var_imp)<- colnames(x_train)
+  return(var_imp)
 }
 
 

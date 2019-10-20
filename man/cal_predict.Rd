@@ -14,7 +14,7 @@ cal_predict(model, x_test, y_test)
 \item{y_test}{response vector for test data (vector/dataframe)}
 }
 \value{
-The input model list with the following additional components:
+A list with with the following components:
 
 \item{f_t_test}{predicted values with model using x_test as the predictors}
 \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
