@@ -60,142 +60,9 @@ For `model_RRBoost_cv_LADTree`, we set the possible combinations of parameters `
 
 ``` r
 model_RRBoost_median = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "median", max_depth = 1, niter = 1000, control = Boost.control(make_prediction =  TRUE, cal_imp = TRUE))
-```
-
-    ## [1] "RRBoost"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"
-
-``` r
  model_RRBoost_LADTree = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "LADTree", max_depth = 1, niter = 1000, control = Boost.control(max_depth_init = 2,min_leaf_size_init = 20, make_prediction =  TRUE, cal_imp = TRUE))
-```
-
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  2 min_leaf_size_init =  20"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"
-
-``` r
 model_RRBoost_cv_LADTree = Boost.validation(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost", error = "rmse", y_init = "LADTree", max_depth = 1, niter = 1000, max_depth_init_set = c(1,2,3,4,5), min_leaf_size_init_set = c(10,20,30), control = Boost.control(make_prediction =  TRUE, cal_imp = TRUE))
 ```
-
-    ## [1] "RRBoost"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  1 min_leaf_size_init =  10"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  1 min_leaf_size_init =  20"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  1 min_leaf_size_init =  30"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  2 min_leaf_size_init =  10"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  2 min_leaf_size_init =  20"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  2 min_leaf_size_init =  30"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  3 min_leaf_size_init =  10"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  3 min_leaf_size_init =  20"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  3 min_leaf_size_init =  30"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  4 min_leaf_size_init =  10"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  4 min_leaf_size_init =  20"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  4 min_leaf_size_init =  30"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  5 min_leaf_size_init =  10"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  5 min_leaf_size_init =  20"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"     
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  5 min_leaf_size_init =  30"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"
 
 In order to compare the predictive performance of the models, we access the the `value` field of the returned objects, which is the test error evaluated at the early stopping time. The early stopping time is determined by the validation set to avoid overfitting (see paper for more details). In this example, we specified the type of error to be `rmse`, the returned `value` will be the test `rmse` evaluated at the early stopping time. If we let the function return multiple types of errors, `value` will be a vector of those errors.
 
@@ -255,27 +122,8 @@ In the package, we also provide a way that separates training, making prediction
 
 ``` r
  model = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "LADTree", max_depth = 1, niter = 1000, control = Boost.control(max_depth_init = 2,min_leaf_size_init = 20,save_tree = TRUE, make_prediction =  FALSE, cal_imp = FALSE))
-```
-
-    ## [1] "RRBoost"
-    ## [1] "max_depth_init =  2 min_leaf_size_init =  20"
-    ## [1] "iteration" "200"      
-    ## [1] "iteration" "400"      
-    ## [1] "iteration" "600"      
-    ## [1] "iteration" "800"      
-    ## [1] "iteration" "1000"
-
-``` r
  prediction <- cal_predict(model, x_test = x[idx_test,], y_test = y[idx_test])
  var_importance <-  cal_imp(model, x_train = x[idx_train,], y_train = y[idx_train])
  print(prediction$value)
-```
-
-    ## [1] 4.937753
-
-``` r
  print(var_importance)
 ```
-
-    ##   frequency      angle chord_length  velocity thickness
-    ## 1  3.027903 0.08711746    0.7676057 0.3144959  2.981596
