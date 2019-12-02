@@ -395,7 +395,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     }else{
 
       if(type == "RRBoost" & i <= n_init){
-        if(round(loss_val[i],7) < min(round(loss_val[1:(i-1)],7))){
+        if(round(loss_val[i],5) < min(round(loss_val[1:(i-1)],5))){
           when_init <- i
           early_stop_idx <- i
           f_train_early  <- f_t_train
@@ -409,7 +409,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
           f_train_early  <- f_t_train
           f_val_early <- f_t_val
         }else{
-          if(round(loss_val[i],7) < min(round(loss_val[(n_init+1):(i-1)],7))){
+          if(round(loss_val[i],5) < min(round(loss_val[(n_init+1):(i-1)],5))){
             early_stop_idx <- i
             f_train_early  <- f_t_train
             f_val_early <- f_t_val
@@ -427,7 +427,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       }
 
       if(type != "RRBoost"){
-      if(round(loss_val[i],7) < min(round(loss_val[1:(i-1)],7)) ){
+      if(round(loss_val[i],5) < min(round(loss_val[1:(i-1)],5)) ){
         early_stop_idx  <- i
         f_train_early  <- f_t_train
         f_val_early <- f_t_val
@@ -672,6 +672,10 @@ cal_imp <- function(model,  x_train, y_train){
   shrinkage <- model$control$shrinkage
 
   for(j in 1:ncol(x_train)){
+    
+    if(j%%10 == 0){
+      print(j)
+    }
     x_train_j <- x_train
     x_train_j[,j] <- sample(x_train_j[,j],length(x_train_j[,j]))
 
