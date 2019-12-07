@@ -29,9 +29,9 @@ init.boost <- function(type)
 
 
 
-newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, cc, min_sigma = FALSE,  alpha_init = c(0), Tol = 10^{-10}, T_newton = 10, bb = 0.5)
+newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, cc, min_sigma = FALSE,  alpha_init = c(0), Tol = 10^{-10}, T_newton = 20, bb = 0.5)
 {
-  tmp = c(NA, length(alpha_init))
+  tmp = rep(NA, length(alpha_init))
   for(k in 1:length(alpha_init)) {
     tryCatch({
       alpha_t <- alpha_init[k]
@@ -50,27 +50,26 @@ newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.gr
           f_prime_prime_alpha <- (A*(sum(D*r_t)) - B*(sum(D*h_train*ss)))/(sum(D*r_t)^2)
         }
 
-        if(f_prime_alpha == 0){
-          alpha_t <- alpha_t
+        if(abs(f_prime_alpha) < Tol){
+          if (f_prime_prime_alpha >= 0){
+            tmp[k] <-alpha_t
+            break;
+          }else{
+            break;
+          }
         }else{
-          alpha_t <- alpha_t - f_prime_alpha/(f_prime_prime_alpha + 10^{-10})
-        }
-
-      }
-
-      if(min_sigma == TRUE) {
-        if (f_prime_prime_alpha >= 0){
-        tmp[k] <-alpha_t
-        }
-      }else{
-        if (f_prime_prime_alpha >= 0){
-        tmp[k] <- alpha_t
+          if( abs(f_prime_alpha/f_prime_prime_alpha) == Inf){
+            alpha_t <- alpha_t - f_prime_alpha/(f_prime_prime_alpha + 10^{-10})
+          }else{
+            alpha_t <- alpha_t - f_prime_alpha/(f_prime_prime_alpha)
+          }
         }
       }
     })
 
   }
-    return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+  #print(tmp)
+  return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
 }
 
 

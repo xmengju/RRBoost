@@ -149,7 +149,7 @@ cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.g
                }
             }
              alpha_init <- bisection.search(f_t_train, h_train, y_train, func_line, func_line.grad, 0, 500, step_num  = 10, k = 0, min_sigma = TRUE)
-
+             print(alpha_init)
              return (newton.search(f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss = ss, cc = cc, min_sigma = TRUE, alpha_init = c(0, 0.1,1, 5, alpha_pre, alpha_init), bb = bb))
            }else{
              func_line <- function(x, s = ss) {func(x/s, cc = cc)}
@@ -354,6 +354,8 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     }else{
       alpha_pre <- 0
     }
+    
+
     alpha[i] <- cal.alpha(type, alpha_pre, f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss = ss, init_status, cc = cc, bb = bb)
 
     f_t_train <- f_t_train + shrinkage*alpha[i]* h_train
@@ -522,6 +524,8 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
       model_tmp <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error= error,
                                 niter = niter, y_init =  "LADTree", max_depth = max_depth,
                                control= control_tmp)
+      print(c(model_tmp$err_val,combs[j, ]))
+      
       #print(c(model_tmp$err_val[model_tmp$early_stop_idx], best_err, min_leaf_size, max_depths))
       if(model_tmp$err_val[model_tmp$early_stop_idx] >= best_err){
          rm(model_tmp)

@@ -60,7 +60,7 @@ For `model_RRBoost_cv_LADTree`, we set the possible combinations of parameters `
 
 ``` r
 model_RRBoost_median = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "median", max_depth = 1, niter = 1000, control = Boost.control(make_prediction =  TRUE, cal_imp = TRUE))
- model_RRBoost_LADTree = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "LADTree", max_depth = 1, niter = 1000, control = Boost.control(max_depth_init = 2,min_leaf_size_init = 20, make_prediction =  TRUE, cal_imp = TRUE))
+model_RRBoost_LADTree = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "LADTree", max_depth = 1, niter = 1000, control = Boost.control(max_depth_init = 2,min_leaf_size_init = 20, make_prediction =  TRUE, cal_imp = TRUE))
 model_RRBoost_cv_LADTree = Boost.validation(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost", error = "rmse", y_init = "LADTree", max_depth = 1, niter = 1000, max_depth_init_set = c(1,2,3,4,5), min_leaf_size_init_set = c(10,20,30), control = Boost.control(make_prediction =  TRUE, cal_imp = TRUE))
 ```
 
@@ -121,9 +121,20 @@ When setting `cal_imp = TRUE` in `control`, we have access to the variable impor
 In the package, we also provide a way that separates training, making predictions, and calculating variable importance. It allows the flexiblity to make predictions on multiple test sets and calculate variable importance when needed. Note that to allow this separation, `save_tree = TRUE` is required in `control`. This saves the trainer weak learners, which are needed for calculating prediction and variable importance, as a model component.
 
 ``` r
- model = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "LADTree", max_depth = 1, niter = 1000, control = Boost.control(max_depth_init = 2,min_leaf_size_init = 20,save_tree = TRUE, make_prediction =  FALSE, cal_imp = FALSE))
- prediction <- cal_predict(model, x_test = x[idx_test,], y_test = y[idx_test])
- var_importance <-  cal_imp(model, x_train = x[idx_train,], y_train = y[idx_train])
- print(prediction$value)
- print(var_importance)
+model = Boost(x_train = x[idx_train,], y_train = y[idx_train], x_val = x[idx_val,], y_val = y[idx_val], x_test = x[idx_test,], y_test = y[idx_test], type = "RRBoost",error = "rmse", y_init = "LADTree", max_depth = 1, niter = 1000, control = Boost.control(max_depth_init = 2,min_leaf_size_init = 20,save_tree = TRUE, make_prediction =  FALSE, cal_imp = FALSE))
+prediction <- cal_predict(model, x_test = x[idx_test,], y_test = y[idx_test])
+var_importance <-  cal_imp(model, x_train = x[idx_train,], y_train = y[idx_train])
 ```
+
+``` r
+print(prediction$value)
+```
+
+    ## [1] 4.937753
+
+``` r
+print(var_importance)
+```
+
+    ##   frequency      angle chord_length  velocity thickness
+    ## 1  3.027903 0.08711746    0.7676057 0.3144959  2.981596
