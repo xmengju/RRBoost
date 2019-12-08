@@ -31,7 +31,10 @@ init.boost <- function(type)
 
 newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, cc, min_sigma = FALSE,  alpha_init = c(0), Tol = 10^{-10}, T_newton = 20, bb = 0.5)
 {
-  tmp = rep(NA, length(alpha_init))
+  # temp2 saves the candidate values when terminates (convergence termination or max step termination)
+  tmp  <- rep(NA, length(alpha_init))
+  tmp2  <- rep(NA, length(alpha_init))
+  
   for(k in 1:length(alpha_init)) {
     tryCatch({
       alpha_t <- alpha_init[k]
@@ -66,10 +69,14 @@ newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.gr
         }
       }
     })
-
+    tmp2[k] <- alpha_t
   }
-  #print(tmp)
-  return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+  if(sum(is.na(tmp)) != length(tmp)){
+    return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+  }else{
+    #print(tmp2)
+    return(tmp2[min(which(abs(tmp2) == min(abs(tmp2), na.rm = TRUE)))])
+  }
 }
 
 
