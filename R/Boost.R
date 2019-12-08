@@ -331,6 +331,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   when_init = NA
 
   for(i in 1:niter) {
+    #print(i)
     
     if(i%%200 ==0) {
      print(c("iteration", i))

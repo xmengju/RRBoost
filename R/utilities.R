@@ -68,9 +68,12 @@ newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.gr
           }
         }
       }
-    })
-    tmp2[k] <- alpha_t
+      tmp2[k] <- alpha_t  # save the maximum step terminated step size
+    }, finally = next )
+
   }
+  #print(tmp)
+  #print(tmp2)
   if(sum(is.na(tmp)) != length(tmp)){
     return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
   }else{
