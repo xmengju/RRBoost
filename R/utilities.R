@@ -28,8 +28,7 @@ init.boost <- function(type)
 }
 
 
-
-newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, cc, min_sigma = FALSE,  alpha_init = c(0), Tol = 10^{-10}, T_newton = 20, bb = 0.5)
+newton.search <- function(f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, cc, min_sigma = FALSE,  alpha_init = c(0), Tol = 10^{-10}, T_newton = 20, bb = 0.5)
 {
   # temp2 saves the candidate values when terminates (convergence termination or max step termination)
   tmp  <- rep(NA, length(alpha_init))
@@ -52,7 +51,7 @@ newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.gr
           B <- sum(C*r_t + D*h_train)
           f_prime_prime_alpha <- (A*(sum(D*r_t)) - B*(sum(D*h_train*ss)))/(sum(D*r_t)^2)
         }
-
+        
         if(abs(f_prime_alpha) < Tol){
           if (f_prime_prime_alpha >= 0){
             tmp[k] <-alpha_t
@@ -61,7 +60,7 @@ newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.gr
             break;
           }
         }else{
-          if( abs(f_prime_alpha/f_prime_prime_alpha) == Inf){
+          if(abs(f_prime_alpha/f_prime_prime_alpha) == Inf){
             alpha_t <- alpha_t - f_prime_alpha/(f_prime_prime_alpha + 10^{-10})
           }else{
             alpha_t <- alpha_t - f_prime_alpha/(f_prime_prime_alpha)
@@ -69,16 +68,13 @@ newton.search <- function( f_t_train, h_train, y_train, func, func.grad, func.gr
         }
       }
       tmp2[k] <- alpha_t  # save the maximum step terminated step size
-    }, finally = next )
-
+    }, finally = next)
   }
-  #print(tmp)
-  #print(tmp2)
+
   if(sum(is.na(tmp)) != length(tmp)){
-    return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+    return(alpha_t = tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
   }else{
-    #print(tmp2)
-    return(tmp2[min(which(abs(tmp2) == min(abs(tmp2), na.rm = TRUE)))])
+    return(alpha_t = tmp2[min(which(abs(tmp2) == min(abs(tmp2), na.rm = TRUE)))])
   }
 }
 
@@ -142,11 +138,6 @@ secant.method <- function(f, x0, x1, tol = 1e-7, n = 50) {
 }
 
 
-cal.tau <- function(u, cc_2){
-  cc_1 <- RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi
-  s =  mscale(u,  tuning.chi= cc_1, delta = 0.5)
-  return((s^2/length(u))* sum(unlist(lapply(u, function(x){func.tukey(x/s, cc = cc_2)}))))
-}
 
 rmse <- function(x){
 
@@ -162,5 +153,3 @@ trmse <- function(trim_prop = NULL, trim_c = NULL, x){
   }
   return(list(trmse = rmse(x[idx]), idx = idx))
 }
-
-

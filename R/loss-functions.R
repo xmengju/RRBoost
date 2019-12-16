@@ -252,8 +252,3 @@ mscale <- function(u, delta=0.5, tuning.chi=1.547645, max.it=100, tol=1e-6) {
   return(s0)
 }
 
-# tauscale <- function(u, tuning2 = 4.5, tuning1 = 1.5, delta1 = .5, delta2 = .128, max.it=100, tol=1e-6) {
-#   si <- mscale(u=u, delta=delta1, tuning.chi = tuning1, max.it=max.it, tol=tol)
-#   s2 <- si^2 * mean(robustbase::Mchi(u/si, cc = tuning2, psi='tukey')) / delta2
-#   return(sqrt(s2))
-# }

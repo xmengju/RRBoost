@@ -5,7 +5,6 @@
 #' Various parameters that control aspects of the `Boost` fit.
 #'
 #' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
-#' @param shrinkage the input shrinkage parameter}
 #' @param cc_s  tuning constant of tukey's loss in SBoost (numeric)
 #' @param eff_s  normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)
 #' @param bb  breakdown point of the SBoost estimator (numeric)
@@ -26,7 +25,7 @@
 #' @export
 #'
 
-Boost.control <- function(n_init = 100, shrinkage = 1, cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE){
+Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE){
 
   if(length(cc_s) == 0){
     cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi)
@@ -37,7 +36,7 @@ Boost.control <- function(n_init = 100, shrinkage = 1, cc_s  = NULL,  eff_m= NUL
   }
   cc_m <-  as.numeric(RobStatTM::lmrobdet.control(efficiency=eff_m, family='bisquare')$tuning.psi)
 
-  return(list(n_init = n_init, shrinkage = shrinkage,   cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree))
+  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree))
 }
 
 init.boosting <- function(type)
@@ -115,70 +114,86 @@ cal.ss <- function(type, f_t_train, y_train,  cc, bb) {
 }
 
 
-cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, init_status, cc = 1.547, bb  = 0.5) {
+
+cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status, cc = 1.547) {
   switch(type,
          LADBoost = {
-           return(bisection.search(f_t_train, h_train, y_train, func, func.grad, 0, 500))
+           ff = function(a,r,h){
+             return(mean(func(r - a*h)))
+           }
+           return(optimize(ff, lower = -10, upper = 300, r = y_train - f_t_train, h = h_train)$minimum)
          },
-
+         
          SBoost = {
-             func_line <- function(x) {mscale(x, delta = bb, tuning.chi = cc)}
-             func_line.grad <- function(x, s = ss) {
-
-               if(sum(func.grad(x/s, cc = cc)*(x)) == 0){
-                 return(0)
-               }else{
-                  C = s/sum(func.grad(x/s, cc = cc)*(x))
-                  return(C*func.grad(x/s, cc = cc))
-               }
-             }
-             alpha_init <- bisection.search(f_t_train, h_train, y_train, func_line, func_line.grad, 0, 500, step_num  = 10, k = 0, min_sigma = TRUE)
-             return (newton.search(f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss = ss, cc = cc, min_sigma = TRUE, alpha_init = c(0,alpha_pre,alpha_init), bb = bb))
+           ff <- function(a, r, h) return(mscale(r - a*h))
+           upper_region = c(0.1,0.5,10,100,300)
+           tmp <- rep(NA, length(upper_region))
+           for(i in 1:length(upper_region)){
+             val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
+             if(val$minimum!=upper_region[i]){
+               tmp[i] <- val$minimum
+             } 
+           }
+           if(sum(is.na(tmp))!= length(tmp)){
+             return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+           }else{
+             print("error! adjust step size")
+           }
          },
          RRBoost = {
            if(init_status == 0) {
-             func_line <- function(x) {
-               mscale(x, delta = bb, tuning.chi = cc)
-               }
-             func_line.grad <- function(x, s = ss) {
-               if(sum(func.grad(x/s, cc = cc)*x) == 0){
-                 return(0)
-               }else{
-                C = ss/sum(func.grad(x/s, cc = cc)*(x))
-                return(C*func.grad(x/s, cc = cc))
-               }
-            }
-             alpha_init <- bisection.search(f_t_train, h_train, y_train, func_line, func_line.grad, 0, 500, step_num  = 10, k = 0, min_sigma = TRUE)
-             return (newton.search(f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss = ss, cc = cc, min_sigma = TRUE, alpha_init = c(0, 0.1,1, 5, alpha_pre, alpha_init), bb = bb))
-           }else{
-             func_line <- function(x, s = ss) {func(x/s, cc = cc)}
-             func_line.grad <- function(x, s = ss) {
-             func.grad(x/s, cc = cc)
+             ff <- function(a, r, h) return(mscale(r - a*h))
+             upper_region = c(0.1,0.5,10,100,300)
+             tmp <- rep(NA, length(upper_region))
+             for(i in 1:length(upper_region)){
+               val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
+               if(val$minimum!=upper_region[i]){
+                 tmp[i] <- val$minimum
+               } 
              }
-             alpha_init <- bisection.search(f_t_train, h_train, y_train, func_line, func_line.grad, 0, 500, step_num  = 10, k = 0)
-             return (newton.search(f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss = ss, cc = cc, alpha_init = c(0,0.1,1,5,alpha_pre, alpha_init)))
+             if(sum(is.na(tmp)) != length(tmp)){
+               return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+             }else{
+               print("error! adjust step size")
+             }
+           }else{
+             ff <- function(a, r, h, c, s) return(mean(func( (r - a*h)/s, cc = c)))
+             upper_region = c(0.1,0.5,10,100,300)
+             tmp <- rep(NA, length(upper_region))
+             for(i in 1:length(upper_region)){
+               val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train, c = cc, s = ss)
+               if(val$minimum!=upper_region[i]){
+                 tmp[i] <- val$minimum
+               } 
+             }
+             if(sum(is.na(tmp)) != length(tmp)){
+               return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+             }else{
+               print("error! adjust step size")
+             }
            }
          },
          L2Boost = {
-           func_line <- function(x) {func(x)}
-           func_line.grad <- function(x) {
-             func.grad(x)
+           ff = function(a,r,h){
+             return(mean(func(r - a*h)))
            }
-           alpha_init <- bisection.search(f_t_train, h_train, y_train, func_line, func_line.grad, 0, 500, step_num  = 10, k = 0)
-           return (newton.search(f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, alpha_init = c(0, 1, alpha_pre, alpha_init)))
+           return(optimize(ff, lower = -10, upper = 10, r = y_train - f_t_train, h = h_train)$minimum)
          },
          MBoost = {
-           func_line <- function(x, s = ss) {func(x, cc = s)}
-           func_line.grad <- function(x, s = ss) {
-             func.grad(x, cc = s)
+           ff = function(a,r,h, c){
+             return(mean(func(r - a*h, c)))
            }
-           alpha_init <- bisection.search(f_t_train, h_train, y_train, func_line, func_line.grad, 0, 500, step_num  = 10, k = 0)
-           return (newton.search(f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss, cc = ss, alpha_init = c(0,alpha_pre, alpha_init)))
+           return(optimize(ff, lower = -10, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
          },
          Robloss = {
-           return(bisection.search(f_t_train, h_train, y_train, func, func.grad, 0, 500))
+           ff = function(a,r,h, cc){
+             return(mean(func(r - a*h, c)))
+           }
+           return(optimize(ff, lower = -10, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
          })
 }
+
+
 
 #' Boost
 #'
@@ -195,7 +210,6 @@ cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.g
 #'@param type type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)
 #'@param error types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)
 #'@param y_init the initial estimator, "median" or "LADTree" (string)
-#'@param  value of the shrinkage shrinkage parameter (numeric)
 #'@param max_depth the maximum depth of the tree learners (numeric)
 #'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
 #'@param control control parameters specified with Boost.control()
@@ -223,13 +237,11 @@ cal.alpha <- function(type, alpha_pre, f_t_train, h_train, y_train, func, func.g
 #'
 #' @export
 #'
-Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",
-                max_depth = 1, control = Boost.control()) {
+Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",  max_depth = 1, control = Boost.control()) {
   print(type)
 
   cc <- NA; n_init <- NA;
 
-  shrinkage <- control$shrinkage
   save_f <- control$save_f
   save_tree <- control$save_tree
   make_prediction <- control$make_prediction
@@ -317,9 +329,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   # to save the error
   err_train <-  err_val <-  rep(NA, niter)
 
-  # save the scale
-  ss_train <- rep(NA, niter)
-
   # save the loss for SBoost and RRBoost (for early stop)
   loss_train <- rep(NA, niter)
   loss_val <- rep(NA, niter)
@@ -341,25 +350,17 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       ss <- cal.ss(type, f_t_train, y_train,  cc, bb)
     }
 
-    ss_train[i] <- ss
-
     dat_tmp <- cal.neggrad(type, x_train, y_train, f_t_train, init_status, ss, func, func.grad, cc)
     tree.model <- rpart(neg_grad~ ., data = dat_tmp, control = rpart.control(maxdepth = max_depth, cp = -Inf))
 
     h_train <- predict(tree.model, newdata = data.frame(x_train))
     h_val <- predict(tree.model, newdata = data.frame(x_val))
 
-    if(i > 1){
-      alpha_pre <- alpha[i-1]
-    }else{
-      alpha_pre <- 0
-    }
-    
 
-    alpha[i] <- cal.alpha(type, alpha_pre, f_t_train, h_train, y_train, func, func.grad, func.grad.prime, ss = ss, init_status, cc = cc, bb = bb)
+    alpha[i] <- cal.alpha(type,  f_t_train, h_train, y_train, func, ss = ss, init_status, cc = cc)
 
-    f_t_train <- f_t_train + shrinkage*alpha[i]* h_train
-    f_t_val <- f_t_val +  shrinkage*alpha[i]*h_val
+    f_t_train <- f_t_train + alpha[i]* h_train
+    f_t_val <- f_t_val +  alpha[i]*h_val
 
     tree_list[[i]] <- tree.model
     err_train[i] <- mean(abs(f_t_train - y_train))
@@ -420,12 +421,12 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       }
 
       if(type == "RRBoost" & i == n_init){
-        init_status <- 1
-        cc <- cc_m
-        ss <- ss_train[when_init]
-        f_t_train <- f_train_early
-        f_t_val <- f_val_early
-        early_stop_idx <- n_init + 1
+          init_status <- 1
+          f_t_train <- f_train_early
+          f_t_val <- f_val_early
+          ss <-  mscale(f_t_train - y_train,  tuning.chi= cc, delta = bb) 
+          cc <- cc_m
+          early_stop_idx <- n_init + 1
       }
 
       if(type != "RRBoost"){
@@ -436,9 +437,9 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       }
     }
 
-      if(save_f == TRUE){
+    }
+    if(save_f == TRUE){
       f_train[,i] <- f_t_train; f_val[,i] <- f_t_val;
-      }
     }
   }
 
@@ -487,7 +488,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 #'@param y_test response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)
 #'@param error types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)
 #'@param y_init the initial estimator, "median" or "LADTree" (string)
-#'@param value of the shrinkage shrinkage parameter (numeric)
 #'@param max_depth the maximum depth of the tree learners (numeric)
 #'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
 #'@param control control parameters specified with Boost.control()
@@ -524,9 +524,8 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
       model_tmp <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error= error,
                                 niter = niter, y_init =  "LADTree", max_depth = max_depth,
                                control= control_tmp)
-      print(c(model_tmp$err_val,combs[j, ]))
-      
-      #print(c(model_tmp$err_val[model_tmp$early_stop_idx], best_err, min_leaf_size, max_depths))
+
+      print(c(model_tmp$err_val[model_tmp$early_stop_idx], best_err, min_leaf_size, max_depths))
       if(model_tmp$err_val[model_tmp$early_stop_idx] >= best_err){
          rm(model_tmp)
       }else{
@@ -595,7 +594,6 @@ cal_predict <- function(model, x_test, y_test){
 
   type <- model$type
   save_f <- model$control$save_f
-  shrinkage <- model$control$shrinkage
   early_stop_idx <- model$early_stop_idx
   when_init <- model$when_init
   n_init <- model$control$n_init
@@ -618,9 +616,9 @@ cal_predict <- function(model, x_test, y_test){
 
   if(type == "RRBoost" & (when_init < early_stop_idx)){
     for(i in c(1:when_init, ((n_init+1):early_stop_idx))){
-      f_t_test  <-  f_t_test + shrinkage * model$alpha[i] *predict(model$tree_list[[i]], newdata = x_test)
+      f_t_test  <-  f_t_test +  model$alpha[i] *predict(model$tree_list[[i]], newdata = x_test)
       if(save_f == TRUE){
-        f_test[i,] <- f_t_test
+        f_test[,i] <- f_t_test
       }
       for(error_type in error){
         err_test[i,error_type] <- cal_error(control, error_type, f_t_test, y_test)
@@ -628,9 +626,9 @@ cal_predict <- function(model, x_test, y_test){
     }
   }else{
     for(i in 1:early_stop_idx){
-      f_t_test  <-  f_t_test + shrinkage *model$alpha[i] *predict(model$tree_list[[i]], newdata = x_test)
+      f_t_test  <-  f_t_test + model$alpha[i] *predict(model$tree_list[[i]], newdata = x_test)
       if(save_f == TRUE){
-        f_test[i,] <- f_t_test
+        f_test[,i] <- f_t_test
       }
       for(error_type in error){
         err_test[i,error_type] <- cal_error(control, error_type, f_t_test, y_test)
@@ -638,12 +636,16 @@ cal_predict <- function(model, x_test, y_test){
     }
   }
 
+  res$value <- err_test[early_stop_idx,]
+  if(length(error) == 1){
+    err_test <- c(err_test)
+  }
   if(save_f == TRUE){
     res$f_test <- f_test
   }
   res$f_t_test <- f_t_test
   res$err_test <- err_test
-  res$value <- err_test[early_stop_idx,]
+
   return(res)
 }
 
@@ -673,7 +675,6 @@ cal_imp <- function(model,  x_train, y_train){
   type <- model$type
   y_init <- model$y_init
   n_init <- model$control$n_init
-  shrinkage <- model$control$shrinkage
 
   for(j in 1:ncol(x_train)){
     
@@ -692,14 +693,14 @@ cal_imp <- function(model,  x_train, y_train){
 
     if(type == "RRBoost" & (n_init < early_stop_idx)){
       for(i in 1:when_init){
-        f_t_train_j  <-  f_t_train_j  + shrinkage * alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
+        f_t_train_j  <-  f_t_train_j  + alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
       }
       for(i in (n_init+1):early_stop_idx){
-        f_t_train_j  <-  f_t_train_j  + shrinkage *alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
+        f_t_train_j  <-  f_t_train_j  + alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
       }
     }else{
       for(i in 1:early_stop_idx){
-        f_t_train_j  <-  f_t_train_j  + shrinkage *alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
+        f_t_train_j  <-  f_t_train_j  + alpha[i] *predict(model$tree_list[[i]], newdata = data.frame(x_train_j))
       }
     }
     var_imp[j] <-  rmse(f_t_train_j[idx] - y_train[idx]) - train_trmse$trmse
