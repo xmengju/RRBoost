@@ -126,50 +126,77 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
          
          SBoost = {
            ff <- function(a, r, h) return(mscale(r - a*h))
-           upper_region = c(0.1,0.5,10,100,300)
-           tmp <- rep(NA, length(upper_region))
+           upper_region = c(0.5,10,100,300)
+           tmp <-  tmp_val <- rep(NA, length(upper_region))
            for(i in 1:length(upper_region)){
              val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
-             if(val$minimum!=upper_region[i]){
-               tmp[i] <- val$minimum
-             } 
-           }
-           if(sum(is.na(tmp))!= length(tmp)){
-             return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+             tmp[i] <- val$minimum
+             tmp_val[i] <- val$objective
+            } 
+          
+           idx <- min(which(tmp_val == min(tmp_val)))
+           order_val <- order(head(tmp_val, idx)) 
+           if( sum(order_val == idx:1) == idx){
+             return(tmp[idx])
            }else{
-             print("error! adjust step size")
+               tmp_order <- order_val  - c(max(order_val), head(order_val, length(order_val)-1))
+               if(sum(tmp_order > 0) > 0){
+                 tmp_idx <- min(which(tmp_order>0))-1
+                 return(tmp[tmp_idx])
+               }else{
+                 return(tmp[1])
+               }
            }
          },
          RRBoost = {
            if(init_status == 0) {
              ff <- function(a, r, h) return(mscale(r - a*h))
-             upper_region = c(0.1,0.5,10,100,300)
-             tmp <- rep(NA, length(upper_region))
+             upper_region = c(0.5,10,100,300)
+             tmp <-  tmp_val <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
                val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
-               if(val$minimum!=upper_region[i]){
-                 tmp[i] <- val$minimum
-               } 
-             }
-             if(sum(is.na(tmp)) != length(tmp)){
-               return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+               tmp[i] <- val$minimum
+               tmp_val[i] <- val$objective
+             } 
+             
+             idx <- min(which(tmp_val == min(tmp_val)))
+             order_val <- order(head(tmp_val, idx)) 
+
+             if( sum(order_val == idx:1) == idx){
+               return(tmp[idx])
              }else{
-               print("error! adjust step size")
+               tmp_order <- order_val  - c(max(order_val), head(order_val, length(order_val)-1))
+               if(sum(tmp_order > 0) > 0){
+                 tmp_idx <- min(which(tmp_order>0))-1
+                 return(tmp[tmp_idx])
+               }else{
+                 return(tmp[1])
+               }
              }
            }else{
              ff <- function(a, r, h, c, s) return(mean(func( (r - a*h)/s,  c)))
-             upper_region = c(0.1,0.5,10,100,300)
+             upper_region = c(0.5,10,100,300)
              tmp <- rep(NA, length(upper_region))
+             tmp <-  tmp_val <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
                val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train, c = cc, s = ss)
-               if(val$minimum!=upper_region[i]){
-                 tmp[i] <- val$minimum
-               } 
-             }
-             if(sum(is.na(tmp)) != length(tmp)){
-               return(tmp[min(which(abs(tmp) == min(abs(tmp), na.rm = TRUE)))])
+               tmp[i] <- val$minimum
+               tmp_val[i] <- val$objective
+             } 
+             
+             idx <- min(which(tmp_val == min(tmp_val)))
+             order_val <- order(head(tmp_val, idx)) 
+             
+             if( sum(order_val == idx:1) == idx){
+               return(tmp[idx])
              }else{
-               print("error! adjust step size")
+               tmp_order <- order_val  - c(max(order_val), head(order_val, length(order_val)-1))
+               if(sum(tmp_order > 0) > 0){
+                 tmp_idx <- min(which(tmp_order>0))-1
+                 return(tmp[tmp_idx])
+               }else{
+                 return(tmp[1])
+               }
              }
            }
          },
@@ -358,7 +385,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
 
     alpha[i] <- cal.alpha(type,  f_t_train, h_train, y_train, func, ss = ss, init_status, cc = cc)
-
     f_t_train <- f_t_train + alpha[i]* h_train
     f_t_val <- f_t_val +  alpha[i]*h_val
 
