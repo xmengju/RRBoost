@@ -636,16 +636,14 @@ cal_predict <- function(model, x_test, y_test){
     }
   }
 
-  res$value <- err_test[early_stop_idx,]
-  if(length(error) == 1){
-    err_test <- c(err_test)
-  }
+  
   if(save_f == TRUE){
     res$f_test <- f_test
   }
   res$f_t_test <- f_t_test
   res$err_test <- err_test
-
+  res$value <- err_test[early_stop_idx,]
+  
   return(res)
 }
 
