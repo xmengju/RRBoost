@@ -157,7 +157,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
                print("error! adjust step size")
              }
            }else{
-             ff <- function(a, r, h, c, s) return(mean(func( (r - a*h)/s, cc = c)))
+             ff <- function(a, r, h, c, s) return(mean(func( (r - a*h)/s,  c)))
              upper_region = c(0.1,0.5,10,100,300)
              tmp <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
@@ -186,7 +186,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
            return(optimize(ff, lower = -10, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
          },
          Robloss = {
-           ff = function(a,r,h, cc){
+           ff = function(a,r,h, c){
              return(mean(func(r - a*h, c)))
            }
            return(optimize(ff, lower = -10, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
