@@ -390,8 +390,10 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
     tree_list[[i]] <- tree.model
     err_train[i] <- mean(abs(f_t_train - y_train))
-    err_val[i] <-  mean(abs(f_t_val - y_val))
+    #err_val[i] <-  mean(abs(f_t_val - y_val))
 
+    err_val[i] <- mean(func.huber(f_t_val - y_val, cc = 3*mad(f_t_val - y_val)))
+    
     # record loss values for early stopping
     if(type == "SBoost" | (type == "RRBoost" & init_status == 0)){
       loss_val[i] <-cal.ss(type, f_t_val, y_val,  cc, bb)
