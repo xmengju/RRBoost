@@ -354,7 +354,8 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   alpha <- rep(NA, niter)
 
   # to save the error
-  err_train <-  err_val <-  rep(NA, niter)
+  err_train <-   rep(NA, niter)
+  err_val <- matrix(NA, nrow = niter, ncol = 2)
 
   # save the loss for SBoost and RRBoost (for early stop)
   loss_train <- rep(NA, niter)
@@ -383,16 +384,16 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     h_train <- predict(tree.model, newdata = data.frame(x_train))
     h_val <- predict(tree.model, newdata = data.frame(x_val))
 
-
     alpha[i] <- cal.alpha(type,  f_t_train, h_train, y_train, func, ss = ss, init_status, cc = cc)
     f_t_train <- f_t_train + alpha[i]* h_train
     f_t_val <- f_t_val +  alpha[i]*h_val
 
     tree_list[[i]] <- tree.model
     err_train[i] <- mean(abs(f_t_train - y_train))
-    #err_val[i] <-  mean(abs(f_t_val - y_val))
-
-    err_val[i] <- mean(func.huber(f_t_val - y_val, cc = 3*mad(f_t_val - y_val)))
+    #err_val[i] <-  
+    
+    err_val[i,1] <- mean(abs(f_t_val - y_val))
+    err_val[i,2] <- ss
     
     # record loss values for early stopping
     if(type == "SBoost" | (type == "RRBoost" & init_status == 0)){
@@ -426,7 +427,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     }else{
 
       if(type == "RRBoost" & i <= n_init){
-        if(round(loss_val[i],5) < min(round(loss_val[1:(i-1)],5))){
+        if(round(loss_val[i],4) < min(round(loss_val[1:(i-1)],4))){
           when_init <- i
           early_stop_idx <- i
           f_train_early  <- f_t_train
@@ -440,7 +441,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
           f_train_early  <- f_t_train
           f_val_early <- f_t_val
         }else{
-          if(round(loss_val[i],5) < min(round(loss_val[(n_init+1):(i-1)],5))){
+          if(round(loss_val[i],4) < min(round(loss_val[(n_init+1):(i-1)],4))){
             early_stop_idx <- i
             f_train_early  <- f_t_train
             f_val_early <- f_t_val
@@ -458,7 +459,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       }
 
       if(type != "RRBoost"){
-      if(round(loss_val[i],5) < min(round(loss_val[1:(i-1)],5)) ){
+      if(round(loss_val[i],4) < min(round(loss_val[1:(i-1)],4)) ){
         early_stop_idx  <- i
         f_train_early  <- f_t_train
         f_val_early <- f_t_val
@@ -538,11 +539,11 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
   }
 
   model_best <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error = error,  niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp)
-  best_err <- model_best$err_val[model_best$early_stop_idx]
+  best_err <- model_best$err_val[model_best$early_stop_idx,]
   params = c(0,0)
 
   if(y_init == "LADTree") {
-    combs <- expand.grid(min_leafs= min_leaf_size_init_set, max_depths= max_depth_init_set)
+    combs <- expand.grid(min_leafs= sort(min_leaf_size_init_set,TRUE), max_depths= max_depth_init_set)
     for(j in 1:nrow(combs)) {
       min_leaf_size <- combs[j, 1]
       max_depths <- combs[j, 2]
@@ -553,13 +554,13 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
                                 niter = niter, y_init =  "LADTree", max_depth = max_depth,
                                control= control_tmp)
 
-      print(c(model_tmp$err_val[model_tmp$early_stop_idx], best_err, min_leaf_size, max_depths))
-      if(model_tmp$err_val[model_tmp$early_stop_idx] >= best_err){
-         rm(model_tmp)
-      }else{
+      print(c(model_tmp$err_val[model_tmp$early_stop_idx,], best_err, min_leaf_size, max_depths))
+      if(sum(model_tmp$err_val[model_tmp$early_stop_idx,] < best_err) == 2){
         model_best <- model_tmp
         params <- combs[j, ]
-        best_err <- model_tmp$err_val[model_tmp$early_stop_idx]
+        best_err <- model_tmp$err_val[model_tmp$early_stop_idx,]
+        rm(model_tmp)
+      }else{
         rm(model_tmp)
       }
     }
