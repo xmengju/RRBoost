@@ -393,7 +393,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     #err_val[i] <-  
     
     err_val[i,1] <- mean(abs(f_t_val - y_val))
-    err_val[i,2] <- ss
+    err_val[i,2] <-  cal.ss(type, f_t_train, y_train,  cc, bb)
     
     # record loss values for early stopping
     if(type == "SBoost" | (type == "RRBoost" & init_status == 0)){
