@@ -390,13 +390,8 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
     tree_list[[i]] <- tree.model
     err_train[i] <- mean(abs(f_t_train - y_train))
-    #err_val[i] <-  
-    
-    err_val[i,1] <- mean(abs(f_t_val - y_val))
-    if(type == "RRBoost"){
-      err_val[i,2] <-  cal.ss(type, f_t_val, y_val,  cc = control$cc_s, bb)
-    }
-    
+    err_val[i] <- mean(abs(f_t_val - y_val))
+
     # record loss values for early stopping
     if(type == "SBoost" | (type == "RRBoost" & init_status == 0)){
       loss_val[i] <-cal.ss(type, f_t_val, y_val,  cc, bb)
@@ -474,7 +469,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     }
   }
 
-  model <- list(type = type, control = control, error = error, y_init = y_init,  tree_init = tree_init, tree_list = tree_list, f_train_init = f_train_init, alpha = alpha,  early_stop_idx = early_stop_idx, when_init = when_init, loss_train = loss_train, loss_val = loss_val,  err_val = err_val, err_train = err_train)
+  model <- list(type = type, control = control, error = error, y_init = y_init,  tree_init = tree_init, tree_list = tree_list, f_t_train = f_t_train, f_t_val = f_t_val,  f_train_init = f_train_init, alpha = alpha,  early_stop_idx = early_stop_idx, when_init = when_init, loss_train = loss_train, loss_val = loss_val,  err_val = err_val, err_train = err_train)
   if(make_prediction == TRUE){
     res <- cal_predict(model, x_test, y_test)
     model$f_t_test <- res$f_t_test
@@ -541,7 +536,8 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
   }
 
   model_best <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error = error,  niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp)
-  best_err <- model_best$err_val[model_best$early_stop_idx,]
+  flagger_outlier <- which(abs(model_best$f_t_val - y_val)>3*mad(model_best$f_t_val - y_val))
+  best_err <- mean(abs(model_best$f_t_val[-flagger_outlier] - y_val[-flagger_outlier]))
   params = c(0,0)
 
   if(y_init == "LADTree") {
@@ -556,11 +552,12 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
                                 niter = niter, y_init =  "LADTree", max_depth = max_depth,
                                control= control_tmp)
 
-      print(c(model_tmp$err_val[model_tmp$early_stop_idx,], best_err, min_leaf_size, max_depths))
-      if(sum(model_tmp$err_val[model_tmp$early_stop_idx,] < best_err) == 2){
+      err_tmp <- mean(abs(model_tmp$f_t_val[-flagger_outlier] - y_val[-flagger_outlier]))
+      print(c(err_tmp, best_err, min_leaf_size, max_depths))
+      if(err_tmp < best_err) {
         model_best <- model_tmp
         params <- combs[j, ]
-        best_err <- model_tmp$err_val[model_tmp$early_stop_idx,]
+        best_err <- err_tmp
         rm(model_tmp)
       }else{
         rm(model_tmp)
