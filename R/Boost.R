@@ -537,7 +537,11 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
 
   model_best <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error = error,  niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp)
   flagger_outlier <- which(abs(model_best$f_t_val - y_val)>3*mad(model_best$f_t_val - y_val))
-  best_err <- mean(abs(model_best$f_t_val[-flagger_outlier] - y_val[-flagger_outlier]))
+  if(length(flagger_outlier)>1){
+    best_err <- mean(abs(model_best$f_t_val[-flagger_outlier] - y_val[-flagger_outlier]))
+  }else{
+    best_err <- mean(abs(model_best$f_t_val - y_val))
+  }
   params = c(0,0)
 
   if(y_init == "LADTree") {
@@ -552,7 +556,12 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
                                 niter = niter, y_init =  "LADTree", max_depth = max_depth,
                                control= control_tmp)
 
-      err_tmp <- mean(abs(model_tmp$f_t_val[-flagger_outlier] - y_val[-flagger_outlier]))
+      if(length(flagger_outlier)>1){
+        err_tmp <- mean(abs(model_tmp$f_t_val[-flagger_outlier] - y_val[-flagger_outlier]))
+      }else{
+        err_tmp <- mean(abs(model_tmp$f_t_val - y_val))
+      }
+      
       print(c(err_tmp, best_err, min_leaf_size, max_depths))
       if(err_tmp < best_err) {
         model_best <- model_tmp
