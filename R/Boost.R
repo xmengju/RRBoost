@@ -216,6 +216,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
            ff = function(a,r,h, c){
              return(mean(func(r - a*h, c)))
            }
+           return(optimize(ff, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
          })
 }
 
