@@ -25,7 +25,7 @@
 #' @export
 #'
 
-Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE){
+Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4){
 
   if(length(cc_s) == 0){
     cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi)
@@ -36,7 +36,7 @@ Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, t
   }
   cc_m <-  as.numeric(RobStatTM::lmrobdet.control(efficiency=eff_m, family='bisquare')$tuning.psi)
 
-  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree))
+  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision))
 }
 
 init.boosting <- function(type)
@@ -121,7 +121,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
            ff = function(a,r,h){
              return(mean(func(r - a*h)))
            }
-           return(optimize(ff, lower = -10, upper = 300, r = y_train - f_t_train, h = h_train)$minimum)
+           return(optimize(ff, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train)$minimum)
          },
          
          SBoost = {
@@ -129,7 +129,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
            upper_region = c(0.5,10,100,300)
            tmp <-  tmp_val <- rep(NA, length(upper_region))
            for(i in 1:length(upper_region)){
-             val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
+             val = optimize(ff, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
              tmp[i] <- val$minimum
              tmp_val[i] <- val$objective
             } 
@@ -154,7 +154,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
              upper_region = c(0.5,10,100,300)
              tmp <-  tmp_val <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
-               val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
+               val = optimize(ff, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
                tmp[i] <- val$minimum
                tmp_val[i] <- val$objective
              } 
@@ -179,7 +179,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
              tmp <- rep(NA, length(upper_region))
              tmp <-  tmp_val <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
-               val = optimize(ff, lower = -10, upper = upper_region[i], r = y_train - f_t_train, h = h_train, c = cc, s = ss)
+               val = optimize(ff, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train, c = cc, s = ss)
                tmp[i] <- val$minimum
                tmp_val[i] <- val$objective
              } 
@@ -204,19 +204,18 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
            ff = function(a,r,h){
              return(mean(func(r - a*h)))
            }
-           return(optimize(ff, lower = -10, upper = 10, r = y_train - f_t_train, h = h_train)$minimum)
+           return(optimize(ff, lower = -1, upper = 10, r = y_train - f_t_train, h = h_train)$minimum)
          },
          MBoost = {
            ff = function(a,r,h, c){
              return(mean(func(r - a*h, c)))
            }
-           return(optimize(ff, lower = -10, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
+           return(optimize(ff, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
          },
          Robloss = {
            ff = function(a,r,h, c){
              return(mean(func(r - a*h, c)))
            }
-           return(optimize(ff, lower = -10, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
          })
 }
 
@@ -273,6 +272,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   save_tree <- control$save_tree
   make_prediction <- control$make_prediction
   bb <- control$bb
+  precision <- control$precision
 
   if(type == "RRBoost"){
     n_init <- control$n_init
@@ -424,7 +424,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     }else{
 
       if(type == "RRBoost" & i <= n_init){
-        if(round(loss_val[i],4) < min(round(loss_val[1:(i-1)],4))){
+        if(round(loss_val[i], precision) < min(round(loss_val[1:(i-1)], precision))){
           when_init <- i
           early_stop_idx <- i
           f_train_early  <- f_t_train
@@ -438,7 +438,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
           f_train_early  <- f_t_train
           f_val_early <- f_t_val
         }else{
-          if(round(loss_val[i],4) < min(round(loss_val[(n_init+1):(i-1)],4))){
+          if(round(loss_val[i], precision) < min(round(loss_val[(n_init+1):(i-1)], precision))){
             early_stop_idx <- i
             f_train_early  <- f_t_train
             f_val_early <- f_t_val
@@ -448,7 +448,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
       if(type == "RRBoost" & i == n_init){
           init_status <- 1
-          f_t_train <- f_train_early
+          f_t_train <- f_train_early  # rest the current one
           f_t_val <- f_val_early
           ss <-  mscale(f_t_train - y_train,  tuning.chi= cc, delta = bb) 
           cc <- cc_m
@@ -456,7 +456,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       }
 
       if(type != "RRBoost"){
-      if(round(loss_val[i],4) < min(round(loss_val[1:(i-1)],4)) ){
+      if(round(loss_val[i], precision) < min(round(loss_val[1:(i-1)], precision)) ){
         early_stop_idx  <- i
         f_train_early  <- f_t_train
         f_val_early <- f_t_val
@@ -469,6 +469,8 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     }
   }
 
+  f_t_train <-   f_train_early
+  f_t_val <- f_val_early
   model <- list(type = type, control = control, error = error, y_init = y_init,  tree_init = tree_init, tree_list = tree_list, f_t_train = f_t_train, f_t_val = f_t_val,  f_train_init = f_train_init, alpha = alpha,  early_stop_idx = early_stop_idx, when_init = when_init, loss_train = loss_train, loss_val = loss_val,  err_val = err_val, err_train = err_train)
   if(make_prediction == TRUE){
     res <- cal_predict(model, x_test, y_test)
