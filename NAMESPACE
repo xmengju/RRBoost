@@ -3,5 +3,5 @@
 export(Boost)
 export(Boost.control)
 export(Boost.validation)
-export(cal_imp)
+export(cal_imp_func)
 export(cal_predict)
