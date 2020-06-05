@@ -24,8 +24,7 @@
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
-#'
-
+#' 
 Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1, save_time= TRUE){
 
   if(length(cc_s) == 0){
@@ -760,6 +759,7 @@ cal_error <- function(control, error_type, f_t_test, y_test){
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
+#' 
 cal_predict <- function(model, x_test, y_test){
 
   if(class(x_test) == "numeric") {
@@ -841,7 +841,7 @@ cal_predict <- function(model, x_test, y_test){
   return(res)
 }
 
-#' cal_imp
+#' cal_imp_func
 #'
 #' A function to calculate variable importance given an object returned by Boost and validation data
 #'
@@ -855,6 +855,7 @@ cal_predict <- function(model, x_test, y_test){
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
+#' 
 cal_imp_func <- function(model,  x_val, y_val){
   
   if(class(x_val) == "numeric") {
