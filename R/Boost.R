@@ -399,7 +399,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     dat_tmp <- cal.neggrad(type, x_train, y_train, f_t_train, init_status, ss, func, func.grad, cc)
     
     if(newton == 1 & type == "RRBoost" & init_status == 1){
-      tmp_newton <- func.tukey.grad.prime(  (f_t_train - y_train)/ss ,cc = cc)
+      tmp_newton <- func.tukey.grad.prime((f_t_train - y_train)/ss ,cc = cc)
       idx_newton <- which(dat_tmp$neg_grad == 0)
       dat_tmp$neg_grad <- dat_tmp$neg_grad/func.tukey.grad.prime(  (f_t_train - y_train)/ss ,cc = cc)
       dat_tmp$neg_grad[idx_newton] <- 0
@@ -449,43 +449,10 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       f_val_early <- f_t_val
       early_stop_idx <- 1
     }else{
-
-      if(type == "RRBoost" & i <= n_init){
-        if(round(loss_val[i], precision) < min(round(loss_val[1:(i-1)], precision))){
-          when_init <- i
-          early_stop_idx <- i
-          f_train_early  <- f_t_train
-          f_val_early <- f_t_val
-        }
-      }
-
-      if(type == "RRBoost" &  (init_status == 1)){
-        if(i == n_init + 1){
-          early_stop_idx <- i
-          f_train_early  <- f_t_train
-          f_val_early <- f_t_val
-        }else{
-          if(round(err_val[i], precision) < min(round(err_val[(n_init+1):(i-1)], precision))){
-            early_stop_idx <- i
-            f_train_early  <- f_t_train
-            f_val_early <- f_t_val
-          }
-        }
-      }
-
-      if(type == "RRBoost" & i == n_init){
-          init_status <- 1
-          f_t_train <- f_train_early  # rest the current one
-          f_t_val <- f_val_early
-          ss <-  mscale(f_t_train - y_train,  tuning.chi= cc, delta = bb) 
-          cc <- cc_m
-          early_stop_idx <- n_init + 1
-      }
-
+      
       if(type != "RRBoost"){
-        
         if(type %in% c("MBoost", "Robloss")){
-          if(round(err_val[i], precision) < min(round(err_val[1:(i-1)], precision)) ){
+          if(round(err_val[i], precision) < min(round(err_val[1:(i-1)], precision))){
             early_stop_idx  <- i
             f_train_early  <- f_t_train
             f_val_early <- f_t_val
@@ -497,8 +464,33 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
             f_val_early <- f_t_val
           }
         }
-    }
+      }
+      
+      if(type == "RRBoost" & i <= n_init){
+        if(round(loss_val[i], precision) < min(round(loss_val[1:(i-1)], precision))){
+          when_init <- i
+          early_stop_idx <- i
+          f_train_early  <- f_t_train
+          f_val_early <- f_t_val
+        }
+      }
 
+      if(type == "RRBoost" &  (init_status == 1)){
+          if(round(loss_val[i], precision) < min(round(loss_val[(n_init):(i-1)], precision))){
+            early_stop_idx <- i
+            f_train_early  <- f_t_train
+            f_val_early <- f_t_val
+          }
+      }
+      
+      if(type == "RRBoost" & i == n_init){
+        init_status <- 1
+        f_t_train <- f_train_early  # rest the current one
+        f_t_val <- f_val_early
+        ss <-  mscale(f_t_train - y_train,  tuning.chi= cc, delta = bb) 
+        cc <- cc_m
+        loss_val[i] <- mean(func((f_t_val - y_val)/ss, cc = cc_m))
+       }
     }
     if(save_f == TRUE){
       f_train[,i] <- f_t_train; f_val[,i] <- f_t_val;
@@ -783,8 +775,6 @@ cal_predict <- function(model, x_test, y_test){
   names(var_select) <- colnames(x_test)
   res <- list()
 
-  
-  
   if(save_f == TRUE){
     f_test <- matrix(NA, nrow(x_test), niter)
   }
@@ -815,7 +805,7 @@ cal_predict <- function(model, x_test, y_test){
       }
     }
   }else{
-    for(i in 1:early_stop_idx){
+    for(i in 1:early_stop_idx){  #stopped at stage 1
       f_t_test  <-  f_t_test +   shrinkage*model$alpha[i] *predict(model$tree_list[[i]], newdata = x_test)
       frame <-model$tree_list[[i]]$frame
       leaves <- frame$var == "<leaf>"
