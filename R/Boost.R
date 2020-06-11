@@ -19,6 +19,7 @@
 #' @param save_tree save trees at all iterations  (TRUE or FALSE)
 #' @param save_all_err_rr save validation and test error of RRBoost trained with all combination of LADTree parameters (TRUE or FALSE)
 #' @param shrinkage shrinkage parameter in boosting (numeric)
+#' @param use_init use provided fitted init tree in boosting (mainly to reduce computation in Boost.validation) (TRUE or FALSE)
 #' @return A list of all input parameters
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
@@ -42,6 +43,7 @@ Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, t
   if(missing(save_time)){
     save_time <- TRUE
   }
+
   return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision,  save_all_err_rr =  save_all_err_rr, shrinkage = shrinkage, save_time = save_time))
 }
 
@@ -245,6 +247,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #'@param y_init the initial estimator, "median" or "LADTree" (string)
 #'@param max_depth the maximum depth of the tree learners (numeric)
 #'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
+#'@param tree_init_provided provided fitted initial tree (rpart object)
 #'@param control control parameters specified with Boost.control()
 #'@return A list with the following components:
 #'
@@ -270,7 +273,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #'
 #' @export
 #'
-Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",  max_depth = 1, control = Boost.control(), newton = 0) {
+Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",  max_depth = 1, tree_init_provided = NULL, control = Boost.control(), newton = 0) {
   
   print(type)
 
@@ -342,21 +345,26 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   start_time_a <- Sys.time()
   # initialization
   if(y_init == "LADTree"){
-      if(is.null(control$max_depth_init)) {
-        max_depth_init <- 3
-      }else{
-        max_depth_init <- control$max_depth_init
-      }
-
-      if(is.null(control$min_leaf_size_init)) {
-        min_leaf_size_init = 10
-      }else{
-        min_leaf_size_init <- control$min_leaf_size_init
-      }
-
-    #print(paste("max_depth_init = ", max_depth_init,"min_leaf_size_init = ", min_leaf_size_init))
-    dat_tmp <- data.frame(x_train, y_train = y_train)
-    tree_init <- rpart(y_train~ ., data = dat_tmp,control = rpart.control(maxdepth = max_depth_init, minbucket = min_leaf_size_init, xval = 0, cp = -Inf), method = alist)
+    if(!missing(tree_init_provided)){
+      print("provided!")
+      tree_init <- tree_init_provided
+    }else{
+        if(is.null(control$max_depth_init)) {
+          max_depth_init <- 3
+        }else{
+          max_depth_init <- control$max_depth_init
+        }
+  
+        if(is.null(control$min_leaf_size_init)) {
+          min_leaf_size_init = 10
+        }else{
+          min_leaf_size_init <- control$min_leaf_size_init
+        }
+  
+      #print(paste("max_depth_init = ", max_depth_init,"min_leaf_size_init = ", min_leaf_size_init))
+      dat_tmp <- data.frame(x_train, y_train = y_train)
+      tree_init <- rpart(y_train~ ., data = dat_tmp,control = rpart.control(maxdepth = max_depth_init, minbucket = min_leaf_size_init, xval = 0, cp = -Inf), method = alist)
+    }
     f_train_early <- f_train_init <- f_t_train <- predict(tree_init, newdata = x_train)
     f_val_early <- f_t_val <-  predict(tree_init, newdata = x_val)
   }else{
@@ -396,8 +404,10 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
       ss <- cal.ss(type, f_t_train, y_train,  cc, bb)
     }
 
+  
     dat_tmp <- cal.neggrad(type, x_train, y_train, f_t_train, init_status, ss, func, func.grad, cc)
     
+
     if(newton == 1 & type == "RRBoost" & init_status == 1){
       tmp_newton <- func.tukey.grad.prime((f_t_train - y_train)/ss ,cc = cc)
       idx_newton <- which(dat_tmp$neg_grad == 0)
@@ -407,13 +417,14 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     }
     
     tree.model <- rpart(neg_grad~ ., data = dat_tmp, control = rpart.control(maxdepth = max_depth, cp = 0))
-
+    
     h_train <- predict(tree.model, newdata = data.frame(x_train))
     h_val <- predict(tree.model, newdata = data.frame(x_val))
 
     alpha[i] <- cal.alpha(type,  f_t_train, h_train, y_train, func, ss = ss, init_status, cc = cc)
     f_t_train <- f_t_train + shrinkage*alpha[i]* h_train
     f_t_val <- f_t_val +  shrinkage*alpha[i]*h_val
+
 
     tree_list[[i]] <- tree.model
     err_train[i] <- mean(abs(f_t_train - y_train))
@@ -543,6 +554,11 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     model$f_val  <- f_val
   }
 
+  
+  print(c("when_init", when_init, "early_stop_idx", early_stop_idx))
+  par(mfrow = c(1,2))
+  plot(loss_val)
+  plot(err_val)
   return(model)
 }
 
@@ -582,9 +598,9 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
     control_tmp$save_tree <- TRUE
   }
 
-  model_best <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error = error,  niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp)
-  #print(paste("median_sboost_val", model_best$err_test[model_best$when_init,], "median_rrboost_val", model_best$value))
+  model_best <- Boost(x_train = x_train, y_train = y_train, x_val = x_val, y_val = y_val, x_test = x_test, y_test = y_test, type = type, error = error,  niter = niter, y_init = "median", max_depth = max_depth, control =  control_tmp)
   flagger_outlier <- which(abs(model_best$f_t_val - y_val)>3*mad(model_best$f_t_val - y_val))
+
   if(length(flagger_outlier)>=1){
     best_err <- mean(abs(model_best$f_t_val[-flagger_outlier] - y_val[-flagger_outlier]))  #test with tau-scale
   }else{
@@ -645,12 +661,10 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
              max_depths <- combs[j, 2]
              control_tmp$max_depth_init <- max_depths
              control_tmp$min_leaf_size_init  <- min_leaf_size
-             
-             model_tmp <- Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = type, error= error,
+             model_tmp <- Boost(x_train = x_train, y_train = y_train, x_val = x_val, y_val = y_val, x_test = x_test, y_test = y_test, type = type, error= error,
                                 niter = niter, y_init =  "LADTree", max_depth = max_depth,
-                                control= control_tmp)
+                                control= control_tmp, tree_init[[j]])
             
-      
             if(length(flagger_outlier)>=1){
               err_tmp <- mean(abs(model_tmp$f_t_val[-flagger_outlier] - y_val[-flagger_outlier]))
             }else{
