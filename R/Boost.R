@@ -556,9 +556,9 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
   
   print(c("when_init", when_init, "early_stop_idx", early_stop_idx))
-  par(mfrow = c(1,2))
-  plot(loss_val)
-  plot(err_val)
+  #par(mfrow = c(1,2))
+  #plot(loss_val)
+  #plot(err_val)
   return(model)
 }
 
