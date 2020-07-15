@@ -1,11 +1,16 @@
 ---
 title: "RRBoost: a robust boosting algorithm for regression problems"
 author: "Xiaomeng Ju"
-date: '2019-10-08'
+date: "`r format(Sys.Date())`"
 output: github_document
 ---
 
-This repository contains `R`code implementing robust boosting algorithms to solve regression problems. Before illustrating its usage, we load needed R packages and install the rrboost package. 
+This repository contains `R` code implementing 
+robust boosting algorithms to fit non-parametric regression models. 
+We refer the interested reader to [paper URL](https://github.com).
+
+Before illustrating its usage, we load needed R packages and 
+install the rrboost package. 
 
 
 ```{r initial,echo=T, results='hide'}
