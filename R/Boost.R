@@ -273,7 +273,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #'
 #' @export
 #'
-Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",  max_depth = 1, tree_init_provided = NULL, control = Boost.control(), newton = 0) {
+Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",  max_depth = 1, tree_init_provided = NULL, control = Boost.control()) {
   
   print(type)
 
@@ -361,14 +361,12 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
           min_leaf_size_init <- control$min_leaf_size_init
         }
   
-      #print(paste("max_depth_init = ", max_depth_init,"min_leaf_size_init = ", min_leaf_size_init))
       dat_tmp <- data.frame(x_train, y_train = y_train)
       tree_init <- rpart(y_train~ ., data = dat_tmp,control = rpart.control(maxdepth = max_depth_init, minbucket = min_leaf_size_init, xval = 0, cp = -Inf), method = alist)
     }
     f_train_early <- f_train_init <- f_t_train <- predict(tree_init, newdata = x_train)
     f_val_early <- f_t_val <-  predict(tree_init, newdata = x_val)
   }else{
-    # initialization either with median
     f_train_early <- f_train_init <- f_t_train <- rep(median(y_train), length(y_train))
     f_val_early <- f_t_val <- rep(median(y_train), length(y_val))
   }
@@ -406,16 +404,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
   
     dat_tmp <- cal.neggrad(type, x_train, y_train, f_t_train, init_status, ss, func, func.grad, cc)
-    
-
-    if(newton == 1 & type == "RRBoost" & init_status == 1){
-      tmp_newton <- func.tukey.grad.prime((f_t_train - y_train)/ss ,cc = cc)
-      idx_newton <- which(dat_tmp$neg_grad == 0)
-      dat_tmp$neg_grad <- dat_tmp$neg_grad/func.tukey.grad.prime(  (f_t_train - y_train)/ss ,cc = cc)
-      dat_tmp$neg_grad[idx_newton] <- 0
-      #print(cbind(dat_tmp$neg_grad, (f_t_train - y_train)/ss, func.tukey.grad.prime( (f_t_train - y_train)/ss ,cc = cc), dat_tmp$neg_grad/func.tukey.grad.prime( (f_t_train - y_train)/ss ,cc = cc)))
-    }
-    
     tree.model <- rpart(neg_grad~ ., data = dat_tmp, control = rpart.control(maxdepth = max_depth, cp = 0))
     
     h_train <- predict(tree.model, newdata = data.frame(x_train))
@@ -555,10 +543,8 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   }
 
   
-  print(c("when_init", when_init, "early_stop_idx", early_stop_idx))
-  #par(mfrow = c(1,2))
-  #plot(loss_val)
-  #plot(err_val)
+  #print(c("when_init", when_init, "early_stop_idx", early_stop_idx))
+
   return(model)
 }
 
