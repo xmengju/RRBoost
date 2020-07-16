@@ -36,8 +36,6 @@ Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
 \item{control}{control parameters specified with Boost.control()}
 
 \item{y_train}{response vector for validation data (vector/dataframe)}
-
-\item{value}{of the shrinkage shrinkage parameter (numeric)}
 }
 \value{
 A list with components

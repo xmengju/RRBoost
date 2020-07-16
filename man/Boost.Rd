@@ -6,7 +6,8 @@
 \usage{
 Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
   error = c("rmse", "aad"), niter = 200, y_init = "median",
-  max_depth = 1, control = Boost.control())
+  max_depth = 1, tree_init_provided = NULL,
+  control = Boost.control())
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -29,11 +30,11 @@ Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
 
 \item{max_depth}{the maximum depth of the tree learners (numeric)}
 
+\item{tree_init_provided}{provided fitted initial tree (rpart object)}
+
 \item{control}{control parameters specified with Boost.control()}
 
 \item{y_train}{response vector for validation data (vector/dataframe)}
-
-\item{value}{of the shrinkage shrinkage parameter (numeric)}
 }
 \value{
 A list with the following components:
