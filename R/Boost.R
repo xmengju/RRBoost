@@ -869,6 +869,7 @@ cal_imp_func <- function(model,  x_val, y_val){
 
   cal.imp.shuffle.j <- function(j){
 
+    set.seed(j)
     print(paste("calculating importance for", j, "th variable"))
     x_val_j <- x_val
     x_val_j[,j] <- sample(x_val_j[,j],length(x_val_j[,j]))
