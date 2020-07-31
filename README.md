@@ -178,12 +178,12 @@ the top 2 most important variables.
          cv_LADTree = model_RRBoost_cv_LADTree$var_importance))
 ```
 
-    ##                    median    LADTree cv_LADTree
-    ## frequency     2.812442313 2.61368050  3.9228494
-    ## angle        -0.008505854 0.06265083  0.1673166
-    ## chord_length  0.166805204 0.22086603  0.6838844
-    ## velocity      0.328773995 0.18913548  0.3955189
-    ## thickness     2.121111371 2.17302992  3.0588768
+    ##                    median     LADTree cv_LADTree
+    ## frequency     2.309414686  2.43270235  3.6542946
+    ## angle        -0.008020191 -0.01175275  0.2007053
+    ## chord_length  0.175260533  0.28505599  0.6654213
+    ## velocity      0.372681505  0.33641291  0.3499710
+    ## thickness     2.038869765  1.83221128  2.6923192
 
 In the package, we also provide a way that separates training, making
 predictions, and calculating variable importance. It allows the
@@ -202,12 +202,17 @@ model = Boost(x_train = xtrain, y_train = ytrain,
               control = Boost.control(max_depth_init = 2, 
                                       min_leaf_size_init = 20, 
                                       save_tree = TRUE, 
-                                      make_prediction =  FALSE, 
+                                      make_prediction =  TRUE, 
                                       cal_imp = FALSE))
+```
 
+    ## Registered S3 method overwritten by 'RobStatTM':
+    ##   method        from      
+    ##   summary.covfm fit.models
+
+``` r
 prediction <- cal_predict(model, x_test = xtest, y_test = ytest)
-# This does not work
-# var_importance <-  cal_imp_func(model, x_train = xtrain, y_train = ytrain)
+var_importance <-  cal_imp_func(model, x_val = xval, y_val= yval)
 ```
 
 Sanity check: the results are the same
@@ -219,6 +224,59 @@ print(c(prediction$value, model_RRBoost_LADTree$value))
     ## [1] 5.47219 5.47219
 
 ``` r
-# var_importance could not be calculated above
-# print(c(var_importance, model_RRBoost_LADTree$var_importance))
+print(data.frame(rbind(var_importance, model_RRBoost_LADTree$var_importance)))
 ```
+
+    ##                frequency       angle chord_length  velocity thickness
+    ## var_importance  2.432702 -0.01175275     0.285056 0.3364129  1.832211
+    ##                 2.432702 -0.01175275     0.285056 0.3364129  1.832211
+
+Finally, we compare the performance of RRBoost, L2Boost, LADBoost,
+MBoost, and Robloss.
+
+``` r
+model_L2Boost = Boost(x_train = xtrain, y_train = ytrain, 
+                              x_val = xval, y_val = yval, 
+                              x_test = xtest, y_test = ytest, 
+                              type = "L2Boost", error = "rmse", 
+                              y_init = "median", max_depth = 1, 
+                              niter = 1000, 
+                              control = Boost.control(make_prediction =  TRUE,
+                                                      cal_imp = TRUE))
+model_LADBoost = Boost(x_train = xtrain, y_train = ytrain, 
+                              x_val = xval, y_val = yval, 
+                              x_test = xtest, y_test = ytest, 
+                              type = "LADBoost", error = "rmse", 
+                              y_init = "median", max_depth = 1, 
+                              niter = 1000, 
+                              control = Boost.control(make_prediction =  TRUE,
+                                                      cal_imp = TRUE))
+model_MBoost = Boost(x_train = xtrain, y_train = ytrain, 
+                              x_val = xval, y_val = yval, 
+                              x_test = xtest, y_test = ytest, 
+                              type = "MBoost", error = "rmse", 
+                              y_init = "median", max_depth = 1, 
+                              niter = 1000, 
+                              control = Boost.control(make_prediction =  TRUE,
+                                                      cal_imp = TRUE))
+model_Robloss = Boost(x_train = xtrain, y_train = ytrain, 
+                              x_val = xval, y_val = yval, 
+                              x_test = xtest, y_test = ytest, 
+                              type = "Robloss", error = "rmse", 
+                              y_init = "median", max_depth = 1, 
+                              niter = 1000, 
+                              control = Boost.control(make_prediction =  TRUE,
+                                                      cal_imp = TRUE))
+```
+
+We compare `value` (RMSE on the test set) of different methods and show
+that `model_RRBoost_cv_LADTree` is our best prediction model.
+
+``` r
+print(c( RRBoost = model_RRBoost_cv_LADTree$value,  L2Boost = model_L2Boost$value, 
+        LADTree = model_LADBoost$value,
+        MBoost = model_MBoost$value, Robloss = model_Robloss$value))
+```
+
+    ##  RRBoost  L2Boost  LADTree   MBoost  Robloss 
+    ## 3.944847 6.693516 5.426020 6.994171 5.477482

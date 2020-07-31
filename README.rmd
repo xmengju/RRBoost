@@ -89,7 +89,7 @@ For `model_RRBoost_cv_LADTree`, we set the possible combinations
 of parameters `max_depth_init_set = c(1,2,3,4,5)` 
 and`min_leaf_size_init_set = c(10,20,30)`. 
 
-```{r median, results="hide", cache=TRUE}
+```{r median, results="hide", cache=TRUE, message=FALSE}
 model_RRBoost_median = Boost(x_train = xtrain, y_train = ytrain, 
                              x_val = xval, y_val = yval, 
                              x_test = xtest, y_test = ytest, 
@@ -171,18 +171,59 @@ model = Boost(x_train = xtrain, y_train = ytrain,
               control = Boost.control(max_depth_init = 2, 
                                       min_leaf_size_init = 20, 
                                       save_tree = TRUE, 
-                                      make_prediction =  FALSE, 
+                                      make_prediction =  TRUE, 
                                       cal_imp = FALSE))
 
 prediction <- cal_predict(model, x_test = xtest, y_test = ytest)
-# This does not work
-# var_importance <-  cal_imp_func(model, x_train = xtrain, y_train = ytrain)
+var_importance <-  cal_imp_func(model, x_val = xval, y_val= yval)
 ```
 Sanity check: the results are the same
 ```{r end}
 print(c(prediction$value, model_RRBoost_LADTree$value))
-# var_importance could not be calculated above
-# print(c(var_importance, model_RRBoost_LADTree$var_importance))
+print(data.frame(rbind(var_importance, model_RRBoost_LADTree$var_importance)))
+```
+
+Finally, we compare the performance of RRBoost, L2Boost, LADBoost, MBoost, and Robloss. 
+```{r compare, results='hide', cache=TRUE, message=FALSE}
+model_L2Boost = Boost(x_train = xtrain, y_train = ytrain, 
+                              x_val = xval, y_val = yval, 
+                              x_test = xtest, y_test = ytest, 
+                              type = "L2Boost", error = "rmse", 
+                              y_init = "median", max_depth = 1, 
+                              niter = 1000, 
+                              control = Boost.control(make_prediction =  TRUE,
+                                                      cal_imp = TRUE))
+model_LADBoost = Boost(x_train = xtrain, y_train = ytrain, 
+                              x_val = xval, y_val = yval, 
+                              x_test = xtest, y_test = ytest, 
+                              type = "LADBoost", error = "rmse", 
+                              y_init = "median", max_depth = 1, 
+                              niter = 1000, 
+                              control = Boost.control(make_prediction =  TRUE,
+                                                      cal_imp = TRUE))
+model_MBoost = Boost(x_train = xtrain, y_train = ytrain, 
+                              x_val = xval, y_val = yval, 
+                              x_test = xtest, y_test = ytest, 
+                              type = "MBoost", error = "rmse", 
+                              y_init = "median", max_depth = 1, 
+                              niter = 1000, 
+                              control = Boost.control(make_prediction =  TRUE,
+                                                      cal_imp = TRUE))
+model_Robloss = Boost(x_train = xtrain, y_train = ytrain, 
+                              x_val = xval, y_val = yval, 
+                              x_test = xtest, y_test = ytest, 
+                              type = "Robloss", error = "rmse", 
+                              y_init = "median", max_depth = 1, 
+                              niter = 1000, 
+                              control = Boost.control(make_prediction =  TRUE,
+                                                      cal_imp = TRUE))
+```
+
+We compare `value` (RMSE on the test set) of different methods and show that `model_RRBoost_cv_LADTree` is our best prediction model. 
+```{r compare_val}
+print(c( RRBoost = model_RRBoost_cv_LADTree$value,  L2Boost = model_L2Boost$value, 
+        LADTree = model_LADBoost$value,
+        MBoost = model_MBoost$value, Robloss = model_Robloss$value))
 ```
 
 
