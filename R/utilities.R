@@ -1,3 +1,5 @@
+#' @import rpart
+#'
 # initialize boosting parameters
 init.boost <- function(type)
 {
@@ -33,7 +35,7 @@ newton.search <- function(f_t_train, h_train, y_train, func, func.grad, func.gra
   # temp2 saves the candidate values when terminates (convergence termination or max step termination)
   tmp  <- rep(NA, length(alpha_init))
   tmp2  <- rep(NA, length(alpha_init))
-  
+
   for(k in 1:length(alpha_init)) {
     tryCatch({
       alpha_t <- alpha_init[k]
@@ -51,7 +53,7 @@ newton.search <- function(f_t_train, h_train, y_train, func, func.grad, func.gra
           B <- sum(C*r_t + D*h_train)
           f_prime_prime_alpha <- (A*(sum(D*r_t)) - B*(sum(D*h_train*ss)))/(sum(D*r_t)^2)
         }
-        
+
         if(abs(f_prime_alpha) < Tol){
           if (f_prime_prime_alpha >= 0){
             tmp[k] <-alpha_t
