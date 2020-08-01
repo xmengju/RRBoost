@@ -94,7 +94,7 @@ fits: `median`, an `LADTree` with parameters chosen a priori, and an
 `LADTree` selected using the validation set. The performance of the
 resulting three predictors on the test set will be measured using the
 root mean squared (prediction) error (set with the argument `error =
-"rmse"`). Other pelossible options are average absolute deviation
+"rmse"`). Other possible options are: average absolute deviation
 (`aad`), trimmed root mean squared (prediction) error (`trmse`) and a
 robust root mean squared (prediction) error (`rrmse`). See the help
 page.
