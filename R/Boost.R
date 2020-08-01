@@ -125,18 +125,18 @@ cal.ss <- function(type, f_t_train, y_train,  cc, bb) {
 cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status, cc = 1.547) {
   switch(type,
          LADBoost = {
-           ff = function(a,r,h){
+           ff1 = function(a,r,h){
              return(mean(func(r - a*h)))
            }
-           return(optimize(ff, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train)$minimum)
+           return(optimize(ff1, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train)$minimum)
          },
 
          SBoost = {
-           ff <- function(a, r, h) return(mscale(r - a*h))
+           ff2 <- function(a, r, h) return(mscale(r - a*h))
            upper_region = c(0.5,10,100,300)
            tmp <-  tmp_val <- rep(NA, length(upper_region))
            for(i in 1:length(upper_region)){
-             val = optimize(ff, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
+             val = optimize(ff2, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
              tmp[i] <- val$minimum
              tmp_val[i] <- val$objective
             }
@@ -157,11 +157,11 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
          },
          RRBoost = {
            if(init_status == 0) {
-             ff <- function(a, r, h) return(mscale(r - a*h))
+             ff3 <- function(a, r, h) return(mscale(r - a*h))
              upper_region = c(0.5,10,100,300)
              tmp <-  tmp_val <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
-               val = optimize(ff, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
+               val = optimize(ff3, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train)
                tmp[i] <- val$minimum
                tmp_val[i] <- val$objective
              }
@@ -181,12 +181,12 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
                }
              }
            }else{
-             ff <- function(a, r, h, c, s) return(mean(func( (r - a*h)/s,  c)))
+             ff4 <- function(a, r, h, c, s) return(mean(func( (r - a*h)/s,  c)))
              upper_region = c(0.5,10,100,300)
              tmp <- rep(NA, length(upper_region))
              tmp <-  tmp_val <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
-               val = optimize(ff, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train, c = cc, s = ss)
+               val = optimize(ff4, lower = -1, upper = upper_region[i], r = y_train - f_t_train, h = h_train, c = cc, s = ss)
                tmp[i] <- val$minimum
                tmp_val[i] <- val$objective
              }
@@ -208,22 +208,22 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
            }
          },
          L2Boost = {
-           ff = function(a,r,h){
+           ff5 = function(a,r,h){
              return(mean(func(r - a*h)))
            }
-           return(optimize(ff, lower = -1, upper = 10, r = y_train - f_t_train, h = h_train)$minimum)
+           return(optimize(ff5, lower = -1, upper = 10, r = y_train - f_t_train, h = h_train)$minimum)
          },
          MBoost = {
-           ff = function(a,r,h, c){
+           ff6 = function(a,r,h, c){
              return(mean(func(r - a*h, c)))
            }
-           return(optimize(ff, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
+           return(optimize(ff6, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
          },
          Robloss = {
-           ff = function(a,r,h, c){
+           ff7 = function(a,r,h, c){
              return(mean(func(r - a*h, c)))
            }
-           return(optimize(ff, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
+           return(optimize(ff7, lower = -1, upper = 300, r = y_train - f_t_train, h = h_train, c = ss)$minimum)
          })
 }
 
