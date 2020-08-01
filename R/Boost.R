@@ -847,6 +847,11 @@ cal_predict <- function(model, x_test, y_test){
 #'
 cal_imp_func <- function(model,  x_val, y_val){
 
+  if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
+    oldseed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
+    on.exit(assign(".Random.seed", oldseed, envir = .GlobalEnv))
+  }
+
   if(class(x_val) == "numeric") {
     x_val <- data.frame(x = x_val)
   }else{
