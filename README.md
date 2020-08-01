@@ -40,41 +40,55 @@ observations for each of these three sets:
 ``` r
 n <- nrow(airfoil) 
 n0 <- floor( 0.2 * n ) 
-set.seed(0)
+set.seed(123)
 idx_test <- sample(n, n0)
 idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
 idx_val <- (1:n)[ -c(idx_test, idx_train) ] 
 ```
 
-To illustrate the robustness of the `RRBoost` fit, we add 20% of
-asymmetric outliers to the `training` and `validation`. We randomly
-select 20% of the observations among these two sets combined and perturb
-the response variable:
+<!-- To illustrate the robustness of the `RRBoost` fit, we  -->
 
-``` r
-aircont <- airfoil
-# indices of observations that may be contaminated
-tmp <- c(idx_train, idx_val) 
-# randomly sample 20% of them
-nnc <- round( 0.2 * length(tmp) )
-outliers <- sample(tmp, nnc)
-# shift the response variable with a N(-20, 0.1^2) r.v.
-aircont$y[outliers] <- aircont$y[outliers] + rnorm(nnc, -20, 0.1)
-```
+<!-- add 20% of asymmetric outliers to the `training` and  -->
+
+<!-- `validation`. We randomly select 20% of the observations -->
+
+<!-- among these two sets combined, and perturb the response -->
+
+<!-- variable by adding a `N( -20, 0.1^2)` random variable.  -->
+
+<!-- ```{r addoutlier} -->
+
+<!-- aircont <- airfoil -->
+
+<!-- # indices of observations that may be contaminated -->
+
+<!-- tmp <- c(idx_train, idx_val)  -->
+
+<!-- # randomly sample 20% of them -->
+
+<!-- nnc <- round( 0.2 * length(tmp) ) -->
+
+<!-- outliers <- sample(tmp, nnc) -->
+
+<!-- # shift the response variable with a N(-20, 0.1^2) r.v. -->
+
+<!-- # aircont$y[outliers] <- aircont$y[outliers] + rnorm(nnc, -20, 0.1) -->
+
+<!-- ``` -->
 
 We now create the matrices of explanatory variables (`x`) and vectors of
-responses (`y`) corresponding to this partition. Note that `ytrain` and
-`yval` may contain outliers.
+responses (`y`) corresponding to this partition.
+<!-- Note that `ytrain` and `yval` may contain outliers. -->
 
 ``` r
-xcont <- aircont[, -6]
-ycont <- aircont$y
-xtrain <- xcont[ idx_train, ]
-ytrain <- ycont[ idx_train ]
-xval <- xcont[ idx_val, ]
-yval <- ycont[ idx_val ]
-xtest <- xcont[ idx_test, ]
-ytest <- ycont[ idx_test ]
+xx <- airfoil[, -6]
+yy <- airfoil$y
+xtrain <- xx[ idx_train, ]
+ytrain <- yy[ idx_train ]
+xval <- xx[ idx_val, ]
+yval <- yy[ idx_val ]
+xtest <- xx[ idx_test, ]
+ytest <- yy[ idx_test ]
 ```
 
 The `Boost` function implements the `RRBoost` estimator, as well as the
@@ -161,7 +175,7 @@ entry of the returned object:
 ```
 
     ##    min_leafs max_depths
-    ## 15        10          5
+    ## 14        20          5
 
 The predictive performance of each of the fits on the test set is stored
 in the `value` entry of the returned objects. This is the test error
@@ -185,7 +199,7 @@ print(c(median = model_RRBoost_median$value,
 ```
 
     ##     median    LADTree cv_LADTree 
-    ##   5.350651   5.472190   3.944847
+    ##   4.622946   4.410887   3.443912
 
 The variable selection scores are returned in the `var_importance`
 entry.
@@ -196,16 +210,15 @@ entry.
          cv_LADTree = model_RRBoost_cv_LADTree$var_importance))
 ```
 
-    ##                    median     LADTree cv_LADTree
-    ## frequency     2.309414686  2.43270235  3.6542946
-    ## angle        -0.008020191 -0.01175275  0.2007053
-    ## chord_length  0.175260533  0.28505599  0.6654213
-    ## velocity      0.372681505  0.33641291  0.3499710
-    ## thickness     2.038869765  1.83221128  2.6923192
+    ##                 median   LADTree cv_LADTree
+    ## frequency    3.7844891 3.7814350 5.99593796
+    ## angle        0.0651800 0.3201209 0.08082488
+    ## chord_length 0.9628652 1.0416198 1.87940434
+    ## velocity     0.5609014 0.5983525 0.65163300
+    ## thickness    2.9582819 2.5745679 4.53945204
 
-We note that for the best prediction model above
-(`model_RRBoost_cv_LADTree`), the top 2 explanatory variables are
-`frequency` and `thickness`.
+We note that for the top 2 explanatory variables are consistently found
+to be `frequency` and `thickness`.
 
 In the package, we also provide a way that separates training, making
 predictions, and calculating variable importance. It allows the
@@ -245,8 +258,9 @@ print(all.equal(var_importance, model_RRBoost_LADTree$var_importance))
 
     ## [1] TRUE
 
-Finally, we compare the performance of RRBoost, L2Boost, LADBoost,
-MBoost, and Robloss.
+Finally, we compare the performance of `RRBoost` with that of the other
+boosting algorithms implemented in the package, namely: `L2Boost`,
+`LADBoost`, `MBoost`, and `Robloss`.
 
 ``` r
 model_L2Boost = Boost(x_train = xtrain, y_train = ytrain, 
@@ -283,8 +297,7 @@ model_Robloss = Boost(x_train = xtrain, y_train = ytrain,
                                                       cal_imp = TRUE))
 ```
 
-We compare `value` (RMSE on the test set) of different methods and show
-that `model_RRBoost_cv_LADTree` is our best prediction model.
+Note that `RRBoost` yields the best predictions on the test set:
 
 ``` r
 print(c( RRBoost = model_RRBoost_cv_LADTree$value,  
@@ -295,4 +308,4 @@ print(c( RRBoost = model_RRBoost_cv_LADTree$value,
 ```
 
     ##  RRBoost  L2Boost  LADTree   MBoost  Robloss 
-    ## 3.944847 6.693516 5.426020 6.994171 5.477482
+    ## 3.443912 4.521834 4.520258 4.483478 4.648868
