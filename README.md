@@ -1,24 +1,25 @@
 RRBoost: a robust boosting algorithm for regression problems
 ================
 Xiaomeng Ju and Matias Salibian Barrera
-2020-07-31
+2020-08-01
 
-This repository contains `R` code implementing a robust boosting
-algorithm to fit non-parametric regression models. We refer the
-interested reader to [paper URL](https://github.com).
+This repository contains `R` code implementing the robust boosting
+algorithm [paper URL](https://github.com). This method provides an
+outlier-robust fit for non-parametric regression models.
 
-This package can be installed as follows:
+The package can be installed as follows:
 
 ``` r
 devtools::install_github("xmengju/RRBoost")
 ```
 
-To demonstrate the usage of the package, we will use the `airfoil`
-dataset. It consists of `n = 1503` observations with `p = 5` explanatory
-variables, and the goal is to predict the response variable `y`. We load
-the data and look at the first few observations:
+We will illustrate the use of the package with the `airfoil` dataset. It
+consists of `n = 1503` observations with `p = 5` explanatory variables,
+and the goal is to predict the response variable `y`. We load the data
+and look at the first few observations:
 
 ``` r
+library(RRBoost)
 data(airfoil)
 head(airfoil)
 ```
@@ -31,12 +32,12 @@ head(airfoil)
     ## 5      2000     0       0.3048     71.3 0.00266337 127.461
     ## 6      2500     0       0.3048     71.3 0.00266337 125.571
 
-In order to train our predictor we split the data set into a training
-set (with 60% of the available data), a validation set and a test set
-(both with 20% of the data). The following code creates these sets:
+In order to train our predictor, we split the data set into a `training`
+set (with 60% of the available data), a `validation` set and a `test`
+set (both with 20% of the data). We first randomly select the
+observations for each of these three sets:
 
 ``` r
-library(rrboost)
 n <- nrow(airfoil) 
 n0 <- floor( 0.2 * n ) 
 set.seed(0)
@@ -45,21 +46,25 @@ idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
 idx_val <- (1:n)[ -c(idx_test, idx_train) ] 
 ```
 
-To illustrate the robustness of RRBoost, we added 20% of asymmetric
-outliers to the training and validation set to resemble a contaminated
-setting.
+To illustrate the robustness of the `RRBoost` fit, we add 20% of
+asymmetric outliers to the `training` and `validation`. We randomly
+select 20% of the observations among these two sets combined and perturb
+the response variable:
 
 ``` r
 aircont <- airfoil
 # indices of observations that may be contaminated
 tmp <- c(idx_train, idx_val) 
 # randomly sample 20% of them
-outliers <- sample(tmp, round( 0.2 * length(tmp) ) )
+nnc <- round( 0.2 * length(tmp) )
+outliers <- sample(tmp, nnc)
 # shift the response variable with a N(-20, 0.1^2) r.v.
-aircont$y[outliers] <- aircont$y[outliers] + rnorm(length(outliers), -20, 0.1)
+aircont$y[outliers] <- aircont$y[outliers] + rnorm(nnc, -20, 0.1)
 ```
 
-We now create the training, validation and test data sets:
+We now create the matrices of explanatory variables (`x`) and vectors of
+responses (`y`) corresponding to this partition. Note that `ytrain` and
+`yval` may contain outliers.
 
 ``` r
 xcont <- aircont[, -6]
@@ -204,13 +209,7 @@ model = Boost(x_train = xtrain, y_train = ytrain,
                                       save_tree = TRUE, 
                                       make_prediction =  TRUE, 
                                       cal_imp = FALSE))
-```
 
-    ## Registered S3 method overwritten by 'RobStatTM':
-    ##   method        from      
-    ##   summary.covfm fit.models
-
-``` r
 prediction <- cal_predict(model, x_test = xtest, y_test = ytest)
 var_importance <-  cal_imp_func(model, x_val = xval, y_val= yval)
 ```
@@ -218,18 +217,16 @@ var_importance <-  cal_imp_func(model, x_val = xval, y_val= yval)
 Sanity check: the results are the same
 
 ``` r
-print(c(prediction$value, model_RRBoost_LADTree$value))
+print(all.equal(prediction$value, model_RRBoost_LADTree$value))
 ```
 
-    ## [1] 5.47219 5.47219
+    ## [1] TRUE
 
 ``` r
-print(data.frame(rbind(var_importance, model_RRBoost_LADTree$var_importance)))
+print(all.equal(var_importance, model_RRBoost_LADTree$var_importance))
 ```
 
-    ##                frequency       angle chord_length  velocity thickness
-    ## var_importance  2.432702 -0.01175275     0.285056 0.3364129  1.832211
-    ##                 2.432702 -0.01175275     0.285056 0.3364129  1.832211
+    ## [1] TRUE
 
 Finally, we compare the performance of RRBoost, L2Boost, LADBoost,
 MBoost, and Robloss.
@@ -273,9 +270,11 @@ We compare `value` (RMSE on the test set) of different methods and show
 that `model_RRBoost_cv_LADTree` is our best prediction model.
 
 ``` r
-print(c( RRBoost = model_RRBoost_cv_LADTree$value,  L2Boost = model_L2Boost$value, 
-        LADTree = model_LADBoost$value,
-        MBoost = model_MBoost$value, Robloss = model_Robloss$value))
+print(c( RRBoost = model_RRBoost_cv_LADTree$value,  
+         L2Boost = model_L2Boost$value, 
+         LADTree = model_LADBoost$value,
+         MBoost = model_MBoost$value, 
+         Robloss = model_Robloss$value))
 ```
 
     ##  RRBoost  L2Boost  LADTree   MBoost  Robloss 
