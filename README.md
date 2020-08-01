@@ -77,35 +77,44 @@ xtest <- xcont[ idx_test, ]
 ytest <- ycont[ idx_test ]
 ```
 
-The `Boost` function provides calculation of the `RRBoost` estimator, as
-well as previously proposed `L2Boost`,`LADBoost`,`MBoost`,and
-`Robloss`.  
-For `RRBoost`, it allows user to define the initialization of the
-estimator: `median` or `LADTree`. We also provide a `Boost.validation`
-function to select the parameters of `LADTree` based on a the
-performance on the validation set.
+The `Boost` function implements the `RRBoost` estimator, as well as the
+following previously proposed boosting algorithms: `L2Boost`,
+`LADBoost`, `MBoost`, and `Robloss`.
 
-Let us see how to use the functions to calculate the RRBoost with
-different initializations: initialized with the median of training ys
-(`model_RRBoost_median`), a LADTree with user specified parameters
-(`model_RRBoost_LADTree`), and a LADTree whose paramsters are selected
-by validation (`model_RRBoost_cv_LADTree`). We chose `rmse` as the type
-error what we measure on the test set. The other options are `aad`,
-`trmse`, and `rrmse` (see package descriotion), which can be used as a
-reference when the the user suspects the test set also has outliers.
+There are two choices for the initial fit used in the `RRBoost`
+algorithm: `median` (corresponds to a constant initial fit equal to the
+median of the response variable in the training set), and `LADTree` (the
+initial fit is an L1 Tree as proposed in ). To construct the L1 initial
+fit the user can select the desired maximum depth and minimum leaf size,
+or use the function `Boost.validation` to select these parameters based
+the performance on the validation set.
 
-The boosting estimators are calculated using decision stumps (`max_depth
-= 1`) as weak learners over 1000 iterations (`niter = 1000`). Setting
-`make_prediction = TRUE, cal_imp = TRUE` in `control` allows the
-function to return predictions and permutation variable importance.
+We now train the `RRBoost` predictor using the following three initial
+fits: `median`, an `LADTree` with parameters chosen a priori, and an
+`LADTree` selected using the validation set. The performance of the
+resulting three predictors on the test set will be measured using the
+root mean squared (prediction) error (set with the argument `error =
+"rmse"`). Other pelossible options are average absolute deviation
+(`aad`), trimmed root mean squared (prediction) error (`trmse`) and a
+robust root mean squared (prediction) error (`rrmse`). See the help
+page.
 
-For `model_RRBoost_LADTree`, we specifiy the maximum depth of the
-LADTree `max_depth_init = 2` and the minimum number of observations per
-node `min_leaf_size_init = 20`.
+The depth of the base learners in the boosting algorithm is set with the
+argument `max_depth` (below we use decision stumps: `max_depth = 1`).
+The argument `niter` specifies the number of iterations (epochs) to be
+used (we set `niter = 1000`). Predictions (on the supplied test set) and
+variable importance scores can be computed by setting `make_prediction =
+TRUE` and `cal_imp = TRUE` in the argument `control`, as we do below.
 
-For `model_RRBoost_cv_LADTree`, we set the possible combinations of
-parameters `max_depth_init_set = c(1,2,3,4,5)`
-and`min_leaf_size_init_set = c(10,20,30)`.
+For the fit computed with an `LADTree` chosen a priori, we set its
+maximum depth to `max_depth_init = 2` and the minimum number of
+observations per node as `min_leaf_size_init = 20`.
+
+Finally, we also use as initial fit the best `LADTree` among those
+constructed with all the possible combinations of `max_depth_init_set`
+between 1 and 5 (`max_depth_init_set = 1:5`) and
+`min_leaf_size_init_set` equal to 10, 20 or 30 (`min_leaf_size_init_set
+= c(10,20,30)`).
 
 ``` r
 model_RRBoost_median = Boost(x_train = xtrain, y_train = ytrain, 
@@ -137,12 +146,15 @@ model_RRBoost_cv_LADTree = Boost.validation(x_train = xtrain,
                                             error = "rmse", 
                                             y_init = "LADTree", 
                                             max_depth = 1, niter = 1000,
-                                            max_depth_init_set = c(1,2,3,4,5),
+                                            max_depth_init_set = 1:5,
                                             min_leaf_size_init_set = c(10,20,30),
-                                            control = Boost.control(make_prediction =  TRUE, cal_imp = TRUE))
+                                            control = Boost.control(
+                                              make_prediction =  TRUE,
+                                              cal_imp = TRUE))
 ```
 
-The validation selected LADTree parameters are
+The parameters of the selected `LADTree` are returned in the `params`
+entry of the returned object:
 
 ``` r
  print(model_RRBoost_cv_LADTree$params)
@@ -151,16 +163,20 @@ The validation selected LADTree parameters are
     ##    min_leafs max_depths
     ## 15        10          5
 
-In order to compare the predictive performance of the models, we access
-the `value` field of the returned objects, which is the test error
-evaluated at the early stopping time. The early stopping time is
-determined by the validation set to avoid overfitting (see paper for
-more details). In this example, we specified the type of error to be
-`rmse`, the returned `value` will be the test `rmse` evaluated at the
-early stopping time. If we let the function return multiple types of
-errors, `value` will be a vector of those errors.
+The predictive performance of each of the fits on the test set is stored
+in the `value` entry of the returned objects. This is the test error
+(using the criterion specified with the `error` argument of the `Boost`
+call) evaluated at the early stopping time, which is determined using
+the validation set to avoid overfitting (see paper for more details).  
+In this example the returned `value` is the test `rmse` evaluated at the
+early stopping time. The user can evaluate more than one prediction
+performance by passing a vector of strings to the argument `error`
+(e.g. `Boost(..., error=c('rmse', 'rrmse'), ...)`). In that case the
+returned `value` will be a vector corresponding to those prediction
+error measures.
 
-We compare `value` of different initializations
+The best prediction performance on the test set was obtained by
+selecting a deeper initial `LADTree`:
 
 ``` r
 print(c(median = model_RRBoost_median$value, 
@@ -171,11 +187,8 @@ print(c(median = model_RRBoost_median$value,
     ##     median    LADTree cv_LADTree 
     ##   5.350651   5.472190   3.944847
 
-When setting `cal_imp = TRUE` in `control`, we have access to the
-variable importance that is calculated with a permutation procedure
-described in the paper. Our best prediction model
-`model_RRBoost_cv_LADTree` shows that `frequency` and `thickness` are
-the top 2 most important variables.
+The variable selection scores are returned in the `var_importance`
+entry.
 
 ``` r
  print(cbind(median = model_RRBoost_median$var_importance,
@@ -189,6 +202,10 @@ the top 2 most important variables.
     ## chord_length  0.175260533  0.28505599  0.6654213
     ## velocity      0.372681505  0.33641291  0.3499710
     ## thickness     2.038869765  1.83221128  2.6923192
+
+We note that for the best prediction model above
+(`model_RRBoost_cv_LADTree`), the top 2 explanatory variables are
+`frequency` and `thickness`.
 
 In the package, we also provide a way that separates training, making
 predictions, and calculating variable importance. It allows the
