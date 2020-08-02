@@ -1,7 +1,7 @@
 #' @import rpart stats
 #'
-#' @importFrom utils head
-#'
+# #' @importFrom utils head
+# #'
 # initialize boosting parameters
 init.boost <- function(type)
 {
