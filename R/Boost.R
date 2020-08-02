@@ -7,7 +7,6 @@
 #' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
 #' @param eff_m  normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)
 #' @param bb  breakdown point of the M-scale estimator used in the SBoost step (numeric)
-#' one per explanatory variable.
 #' @param trim_prop  trimming proportion if `trmse` is used as the performance metric (numeric)
 #' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric)
 #' @param max_depth_init the maximum depth of the initial LADTtree  (numeric, default 3)
@@ -145,7 +144,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
            if( sum(order_val == idx:1) == idx){
              return(tmp[idx])
            }else{
-               tmp_order <- order_val  - c(max(order_val), head(order_val, length(order_val)-1))
+               tmp_order <- order_val  - c(max(order_val), order_val[1:length(order_val)-1])
                if(sum(tmp_order > 0) > 0){
                  tmp_idx <- min(which(tmp_order>0))-1
                  return(tmp[tmp_idx])
@@ -166,12 +165,12 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
              }
 
              idx <- min(which(tmp_val == min(tmp_val)))
-             order_val <- order(head(tmp_val, idx))
+             order_val <- order(tmp_val[1:idx])
 
              if( sum(order_val == idx:1) == idx){
                return(tmp[idx])
              }else{
-               tmp_order <- order_val  - c(max(order_val), head(order_val, length(order_val)-1))
+               tmp_order <- order_val  - c(max(order_val), order_val[1:length(order_val)-1])
                if(sum(tmp_order > 0) > 0){
                  tmp_idx <- min(which(tmp_order>0))-1
                  return(tmp[tmp_idx])
@@ -191,12 +190,12 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
              }
 
              idx <- min(which(tmp_val == min(tmp_val)))
-             order_val <- order(head(tmp_val, idx))
+             order_val <- order(tmp_val[1:idx])
 
              if( sum(order_val == idx:1) == idx){ #continue going down
                return(tmp[idx])
              }else{
-               tmp_order <- order_val  - c(max(order_val), head(order_val, length(order_val)-1))
+               tmp_order <- order_val  - c(max(order_val), order_val[1:length(order_val)-1])
                if(sum(tmp_order > 0) > 0){
                  tmp_idx <- min(which(tmp_order>0))-1
                  return(tmp[tmp_idx])

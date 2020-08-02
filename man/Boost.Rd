@@ -4,10 +4,21 @@
 \alias{Boost}
 \title{Boost}
 \usage{
-Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
-  error = c("rmse", "aad"), niter = 200, y_init = "median",
-  max_depth = 1, tree_init_provided = NULL,
-  control = Boost.control())
+Boost(
+  x_train,
+  y_train,
+  x_val,
+  y_val,
+  x_test,
+  y_test,
+  type = "L2Boost",
+  error = c("rmse", "aad"),
+  niter = 200,
+  y_init = "median",
+  max_depth = 1,
+  tree_init_provided = NULL,
+  control = Boost.control()
+)
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
