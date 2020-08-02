@@ -4,9 +4,7 @@
 \name{airfoil}
 \alias{airfoil}
 \title{Airfoil data}
-\format{
-An object of class \code{"data.frame"}.
-}
+\format{An object of class \code{"data.frame"}.}
 \source{
 The UCI Archive https://archive.ics.uci.edu/ml/datasets/Airfoil+Self-Noise,
 }
