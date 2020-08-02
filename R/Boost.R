@@ -25,7 +25,7 @@
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
-Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1, save_time= TRUE){
+Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1){
 
   if(length(cc_s) == 0){
     cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi)
@@ -39,11 +39,9 @@ Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, t
   if(missing(save_all_err_rr)){
     save_all_err_rr <- TRUE
   }
-  if(missing(save_time)){
-    save_time <- TRUE
-  }
 
-  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision,  save_all_err_rr =  save_all_err_rr, shrinkage = shrinkage, save_time = save_time))
+
+  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision,  save_all_err_rr =  save_all_err_rr, shrinkage = shrinkage))
 }
 
 init.boosting <- function(type)
@@ -281,7 +279,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
   save_f <- control$save_f
   save_tree <- control$save_tree
-  save_time <-control$save_time
   make_prediction <- control$make_prediction
   bb <- control$bb
   precision <- control$precision
@@ -322,9 +319,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   func.grad <- init_functions$func.grad
   func.grad.prime <-  init_functions$func.grad.prime
 
-  if(save_time){
-    time_vec <- rep(NA, niter+1)
-  }
   # save initialized value
   f_train_init <- NULL
 
@@ -342,7 +336,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   tree_init <- NULL
   tree_list <- list()
 
-  start_time_a <- Sys.time()
   # initialization
   if(y_init == "LADTree"){
     if(!missing(tree_init_provided)){
@@ -370,9 +363,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     f_train_early <- f_train_init <- f_t_train <- rep(median(y_train), length(y_train))
     f_val_early <- f_t_val <- rep(median(y_train), length(y_val))
   }
-
-  start_time_b <- Sys.time()
-  time_vec[1] <- start_time_b - start_time_a
 
   # to save alpha
   alpha <- rep(NA, niter)
@@ -494,9 +484,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     if(save_f == TRUE){
       f_train[,i] <- f_t_train; f_val[,i] <- f_t_val;
     }
-    if(save_time){
-      time_vec[i+1] <- Sys.time() - start_time_a
-    }
+
   }
 
   f_t_train <-   f_train_early
@@ -525,9 +513,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   val_trmse <- trmse(control$trim_prop,control$trim_c, f_val_early - y_val)
   model$val_trmse <- val_trmse
 
-  if(save_time){
-    model$time_vec<- time_vec
-  }
   if(cal_imp == TRUE){
     model$var_importance <- cal_imp_func(model, x_val, y_val)
   }

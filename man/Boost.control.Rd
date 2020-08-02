@@ -19,8 +19,7 @@ Boost.control(
   save_tree = FALSE,
   precision = 4,
   save_all_err_rr = TRUE,
-  shrinkage = 1,
-  save_time = TRUE
+  shrinkage = 1
 )
 }
 \arguments{
