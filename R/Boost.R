@@ -5,9 +5,8 @@
 #' Various parameters that control aspects of the `Boost` fit.
 #'
 #' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
-#' @param cc_s  tuning constant of tukey's loss in SBoost (numeric)
 #' @param eff_m  normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)
-#' @param bb  breakdown point of the SBoost estimator (numeric)
+#' @param bb  breakdown point of the M-scale estimator used in the SBoost step (numeric)
 #' one per explanatory variable.
 #' @param trim_prop  trimming proportion if `trmse` is used as the performance metric (numeric)
 #' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric)
@@ -25,20 +24,22 @@
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
-Boost.control <- function(n_init = 100,  cc_s  = NULL,  eff_m= NULL, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1){
+Boost.control <- function(n_init = 100,  eff_m= 0.95, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1){
 
-  if(length(cc_s) == 0){
+  # if(is.null(cc_s)){
     cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi)
-  }
+  # }
 
-  if(length(eff_m) == 0){
-    eff_m <- 0.95
-  }
-  cc_m <-  as.numeric(RobStatTM::lmrobdet.control(efficiency=eff_m, family='bisquare')$tuning.psi)
+  # if(length(eff_m) == 0){
+  #   eff_m <- 0.95
+  # }
 
-  if(missing(save_all_err_rr)){
-    save_all_err_rr <- TRUE
-  }
+    cc_m <-  as.numeric(RobStatTM::lmrobdet.control(efficiency=eff_m, family='bisquare')$tuning.psi)
+
+  # if(missing(save_all_err_rr)){
+  #   save_all_err_rr <- TRUE
+  #
+  #   }
 
 
   return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision,  save_all_err_rr =  save_all_err_rr, shrinkage = shrinkage))
@@ -279,7 +280,10 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
   save_f <- control$save_f
   save_tree <- control$save_tree
-  make_prediction <- control$make_prediction
+  if(missing(x_test) || missing(y_test)) {
+    make_prediction <- FALSE } else {
+      make_prediction <- control$make_prediction
+    }
   bb <- control$bb
   precision <- control$precision
   shrinkage <- control$shrinkage
