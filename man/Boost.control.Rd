@@ -4,16 +4,31 @@
 \alias{Boost.control}
 \title{Boost.control}
 \usage{
-Boost.control(n_init = 100, cc_s = NULL, eff_m = NULL, bb = 0.5,
-  trim_prop = NULL, trim_c = 3, max_depth_init = 3,
-  min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE,
-  make_prediction = TRUE, save_tree = FALSE, precision = 4,
-  save_all_err_rr = TRUE, shrinkage = 1, save_time = TRUE)
+Boost.control(
+  n_init = 100,
+  cc_s = NULL,
+  eff_m = NULL,
+  bb = 0.5,
+  trim_prop = NULL,
+  trim_c = 3,
+  max_depth_init = 3,
+  min_leaf_size_init = 10,
+  cal_imp = TRUE,
+  save_f = FALSE,
+  make_prediction = TRUE,
+  save_tree = FALSE,
+  precision = 4,
+  save_all_err_rr = TRUE,
+  shrinkage = 1,
+  save_time = TRUE
+)
 }
 \arguments{
 \item{n_init}{number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)}
 
 \item{cc_s}{tuning constant of tukey's loss in SBoost (numeric)}
+
+\item{eff_m}{normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)}
 
 \item{bb}{breakdown point of the SBoost estimator (numeric)
 one per explanatory variable.}
@@ -34,13 +49,11 @@ one per explanatory variable.}
 
 \item{save_tree}{save trees at all iterations  (TRUE or FALSE)}
 
+\item{precision}{number of rounding digits to keep when using validation error to calculate early stopping time (numeric, default 4)}
+
 \item{save_all_err_rr}{save validation and test error of RRBoost trained with all combination of LADTree parameters (TRUE or FALSE)}
 
 \item{shrinkage}{shrinkage parameter in boosting (numeric)}
-
-\item{eff_s}{normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)}
-
-\item{use_init}{use provided fitted init tree in boosting (mainly to reduce computation in Boost.validation) (TRUE or FALSE)}
 }
 \value{
 A list of all input parameters

@@ -4,11 +4,22 @@
 \alias{Boost.validation}
 \title{Boost.validation}
 \usage{
-Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
-  type = "RRBoost", error = c("rmse", "aad"), niter = 1000,
-  max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1, 2, 3,
-  4), min_leaf_size_init_set = c(10, 20, 30),
-  control = Boost.control())
+Boost.validation(
+  x_train,
+  y_train,
+  x_val,
+  y_val,
+  x_test,
+  y_test,
+  type = "RRBoost",
+  error = c("rmse", "aad"),
+  niter = 1000,
+  max_depth = 1,
+  y_init = "LADTree",
+  max_depth_init_set = c(1, 2, 3, 4),
+  min_leaf_size_init_set = c(10, 20, 30),
+  control = Boost.control()
+)
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -17,9 +28,13 @@ Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
 
 \item{x_val}{predictor matrix for validation data (matrix/dataframe)}
 
+\item{y_val}{response vector for validation data (vector/dataframe)}
+
 \item{x_test}{predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)}
 
 \item{y_test}{response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)}
+
+\item{type}{type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)}
 
 \item{error}{types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)}
 
@@ -34,8 +49,6 @@ Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
 \item{min_leaf_size_init_set}{a vector of possible values of the minimum observations per node of the initial LADTree that the algorithm choses from}
 
 \item{control}{control parameters specified with Boost.control()}
-
-\item{y_train}{response vector for validation data (vector/dataframe)}
 }
 \value{
 A list with components

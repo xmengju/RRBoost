@@ -11,5 +11,5 @@ Depends: R (>= 3.5.0)
 Imports: utils, stats, rpart, RobStatTM, robustbase
 License: GPL (>= 3)
 LazyData: True
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Encoding: UTF-8

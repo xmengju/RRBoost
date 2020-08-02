@@ -4,10 +4,21 @@
 \alias{Boost}
 \title{Boost}
 \usage{
-Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
-  error = c("rmse", "aad"), niter = 200, y_init = "median",
-  max_depth = 1, tree_init_provided = NULL,
-  control = Boost.control())
+Boost(
+  x_train,
+  y_train,
+  x_val,
+  y_val,
+  x_test,
+  y_test,
+  type = "L2Boost",
+  error = c("rmse", "aad"),
+  niter = 200,
+  y_init = "median",
+  max_depth = 1,
+  tree_init_provided = NULL,
+  control = Boost.control()
+)
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -15,6 +26,8 @@ Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
 \item{y_train}{response vector for training data (vector/dataframe)}
 
 \item{x_val}{predictor matrix for validation data (matrix/dataframe)}
+
+\item{y_val}{response vector for validation data (vector/dataframe)}
 
 \item{x_test}{predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)}
 
@@ -33,14 +46,13 @@ Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
 \item{tree_init_provided}{provided fitted initial tree (rpart object)}
 
 \item{control}{control parameters specified with Boost.control()}
-
-\item{y_train}{response vector for validation data (vector/dataframe)}
 }
 \value{
 A list with the following components:
 
 \item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
 \item{control}{the input control parameters}
+\item{niter}{number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 \item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
 \item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
 \item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }

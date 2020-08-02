@@ -9,9 +9,9 @@ cal_imp_func(model, x_val, y_val)
 \arguments{
 \item{model}{an object returned by Boost}
 
-\item{x_train}{predictor matrix for test data (matrix/dataframe)}
+\item{x_val}{predictor matrix for validation data (matrix/dataframe)}
 
-\item{y_train}{response vector for test data (vector/dataframe)}
+\item{y_val}{response vector for validation data (vector/dataframe)}
 }
 \value{
 \item{var_importance}{a vector of permutation variable importance}

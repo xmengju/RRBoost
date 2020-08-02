@@ -6,7 +6,7 @@
 #'
 #' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
 #' @param cc_s  tuning constant of tukey's loss in SBoost (numeric)
-#' @param eff_s  normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)
+#' @param eff_m  normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)
 #' @param bb  breakdown point of the SBoost estimator (numeric)
 #' one per explanatory variable.
 #' @param trim_prop  trimming proportion if `trmse` is used as the performance metric (numeric)
@@ -17,9 +17,9 @@
 #' @param save_f save the function estimates at all iterations (TRUE or FALSE)
 #' @param make_prediction make predictions using x_test  (TRUE or FALSE)
 #' @param save_tree save trees at all iterations  (TRUE or FALSE)
+#' @param precision number of rounding digits to keep when using validation error to calculate early stopping time (numeric, default 4)
 #' @param save_all_err_rr save validation and test error of RRBoost trained with all combination of LADTree parameters (TRUE or FALSE)
 #' @param shrinkage shrinkage parameter in boosting (numeric)
-#' @param use_init use provided fitted init tree in boosting (mainly to reduce computation in Boost.validation) (TRUE or FALSE)
 #' @return A list of all input parameters
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
@@ -142,7 +142,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
             }
 
            idx <- min(which(tmp_val == min(tmp_val)))
-           order_val <- order(head(tmp_val, idx))
+           order_val <- order(tmp_val[1:idx])
            if( sum(order_val == idx:1) == idx){
              return(tmp[idx])
            }else{
@@ -238,7 +238,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #'@param x_train predictor matrix for training data (matrix/dataframe)
 #'@param y_train response vector for training data (vector/dataframe)
 #'@param x_val predictor matrix for validation data (matrix/dataframe)
-#'@param y_train response vector for validation data (vector/dataframe)
+#'@param y_val response vector for validation data (vector/dataframe)
 #'@param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
 #'@param y_test response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)
 #'@param type type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)
@@ -252,6 +252,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #'
 #' \item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
 #' \item{control}{the input control parameters}
+#' \item{niter}{number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 #' \item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
 #' \item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
 #' \item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }
@@ -501,7 +502,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   f_t_train <-   f_train_early
   f_t_val <- f_val_early
   tree_list <- tree_list[1:early_stop_idx]
-  model <- list(type = type, control = control, error = error, y_init = y_init,  tree_init = tree_init, tree_list = tree_list, f_t_train = f_t_train, f_t_val = f_t_val,  f_train_init = f_train_init, alpha = alpha,  early_stop_idx = early_stop_idx, when_init = when_init, loss_train = loss_train, loss_val = loss_val,  err_val = err_val, err_train = err_train)
+  model <- list(type = type, control = control, niter = niter, error = error, y_init = y_init,  tree_init = tree_init, tree_list = tree_list, f_t_train = f_t_train, f_t_val = f_t_val,  f_train_init = f_train_init, alpha = alpha,  early_stop_idx = early_stop_idx, when_init = when_init, loss_train = loss_train, loss_val = loss_val,  err_val = err_val, err_train = err_train)
 
   if(make_prediction == TRUE){
 
@@ -556,9 +557,10 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 #'@param x_train predictor matrix for training data (matrix/dataframe)
 #'@param y_train response vector for training data (vector/dataframe)
 #'@param x_val predictor matrix for validation data (matrix/dataframe)
-#'@param y_train response vector for validation data (vector/dataframe)
+#'@param y_val response vector for validation data (vector/dataframe)
 #'@param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
 #'@param y_test response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)
+#'@param type type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)
 #'@param error types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)
 #'@param y_init the initial estimator, "median" or "LADTree" (string)
 #'@param max_depth the maximum depth of the tree learners (numeric)
@@ -695,39 +697,19 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
 }
 
 cal_error <- function(control, error_type, f_t_test, y_test){
-  if(error_type == "robrmse"){
-    x_tmp <- rep(1, length(y_test))
-    tauest <- FastTau(x=x_tmp, y=f_t_test - y_test, N=50, kk=2, tt=5, rr=2, approximate=0, seed=456)
-
-    return(tauest$scale + median(f_t_test - y_test)^2)
-  }
 
   if(error_type == "rmse"){
     return(rmse(f_t_test - y_test))
   }
-  if(error_type == "tau"){
-    x_tmp <- rep(1, length(y_test))
-    tauest <- FastTau(x=x_tmp, y=f_t_test - y_test, N=50, kk=2, tt=5, rr=2, approximate=0, seed=456)
-    return(as.numeric(tauest$scale))
-  }
+
   if(error_type == "trmse"){
     return(trmse(control$trim_prop, control$trim_c, f_t_test - y_test)$trmse)
   }
-  if(error_type == "trmse_mad"){
-    return(trmse(NULL, control$trim_c, f_t_test - y_test)$trmse)
-  }
-  if(error_type == "trmse_prop_1"){
-    return(trmse(0.1, NULL, f_t_test - y_test)$trmse)
-  }
-  if(error_type == "trmse_prop_2"){
-    return(trmse(0.2, NULL, f_t_test - y_test)$trmse)
-  }
+
   if(error_type == "aad"){
     return(mean(abs(f_t_test - y_test)))
   }
-  if(error_type == "rrmse"){
-    return((median(f_t_test - y_test)^2) + mad(f_t_test - y_test)^2)
-  }
+
 }
 
 
@@ -766,6 +748,8 @@ cal_predict <- function(model, x_test, y_test){
   when_init <- model$when_init
   n_init <- model$control$n_init
   error <- model$error
+  niter <- model$niter
+
   err_test <- data.frame(matrix(NA, nrow = early_stop_idx, ncol = length(error)))
   colnames(err_test) <- error
   control <- model$control
@@ -837,8 +821,8 @@ cal_predict <- function(model, x_test, y_test){
 #' A function to calculate variable importance given an object returned by Boost and validation data
 #'
 #'@param model an object returned by Boost
-#'@param x_train predictor matrix for test data (matrix/dataframe)
-#'@param y_train response vector for test data (vector/dataframe)
+#'@param x_val predictor matrix for validation data (matrix/dataframe)
+#'@param y_val response vector for validation data (vector/dataframe)
 #'@return
 #' \item{var_importance}{a vector of permutation variable importance}
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
