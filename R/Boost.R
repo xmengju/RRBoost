@@ -144,7 +144,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
            if( sum(order_val == idx:1) == idx){
              return(tmp[idx])
            }else{
-               tmp_order <- order_val  - c(max(order_val), order_val[1:length(order_val)-1])
+               tmp_order <- order_val  - c(max(order_val), order_val[1:(length(order_val)-1)])
                if(sum(tmp_order > 0) > 0){
                  tmp_idx <- min(which(tmp_order>0))-1
                  return(tmp[tmp_idx])
@@ -170,7 +170,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
              if( sum(order_val == idx:1) == idx){
                return(tmp[idx])
              }else{
-               tmp_order <- order_val  - c(max(order_val), order_val[1:length(order_val)-1])
+               tmp_order <- order_val  - c(max(order_val), order_val[1: (length(order_val)-1)])
                if(sum(tmp_order > 0) > 0){
                  tmp_idx <- min(which(tmp_order>0))-1
                  return(tmp[tmp_idx])
@@ -195,7 +195,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
              if( sum(order_val == idx:1) == idx){ #continue going down
                return(tmp[idx])
              }else{
-               tmp_order <- order_val  - c(max(order_val), order_val[1:length(order_val)-1])
+               tmp_order <- order_val  - c(max(order_val), order_val[1:(length(order_val)-1)])
                if(sum(tmp_order > 0) > 0){
                  tmp_idx <- min(which(tmp_order>0))-1
                  return(tmp[tmp_idx])
