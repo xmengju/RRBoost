@@ -192,7 +192,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
              idx <- min(which(tmp_val == min(tmp_val)))
              order_val <- order(tmp_val[1:idx])
 
-             if( sum(order_val == idx:1) == idx){ #continue going down
+             if(sum(order_val == idx:1) == idx){ #continue going down
                return(tmp[idx])
              }else{
                tmp_order <- order_val  - c(max(order_val), order_val[1:(length(order_val)-1)])
@@ -250,7 +250,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #'
 #' \item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
 #' \item{control}{the input control parameters}
-#' \item{niter}{number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
+#' \item{niter}{the number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 #' \item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
 #' \item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
 #' \item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }
@@ -263,10 +263,11 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #' \item{err_val}{a vector of validation aad error}
 #' \item{err_train}{a vector of training aad error}
 #' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
-#' \item{f_train}{matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
-#' \item{f_val}{matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
-#' \item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
-#' \item{var_importance}{vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
+#' \item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
+#' \item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
+#' \item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
+#' \item{var_select}{a vector of variable selection indicators (1 if selected by any of the base learners, 0 otherwise)}
+#' \item{var_importance}{a vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
@@ -507,7 +508,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
     model$f_t_test <- res$f_t_test
     model$err_test <- res$err_test
     model$value <- res$value
-    model$var_select <- res$var_select
+
     if(save_tree == TRUE){
       model$f_test <- res$f_test
     }
@@ -515,6 +516,8 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
   val_trmse <- trmse(control$trim_prop,control$trim_c, f_val_early - y_val)
   model$val_trmse <- val_trmse
+
+  model$var_select <- find_val(model, colnames(x_train))
 
   if(cal_imp == TRUE){
     model$var_importance <- cal_imp_func(model, x_val, y_val)
@@ -626,7 +629,7 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
       }
     }
 
-    print(j_tmp)
+    #print(j_tmp)
 
       for(j in 1:nrow(combs)) {
 
@@ -680,7 +683,6 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
     model_best$save_all_err_rr <- list(errs_val = errs_val, errs_test = errs_test)
   }
 
-  #print(paste("best_val", model_best$value, "best_parameters", params))
   return(model_best)
 }
 
@@ -699,6 +701,43 @@ cal_error <- function(control, error_type, f_t_test, y_test){
   }
 
 }
+
+find_val <- function(model, var_names){
+
+  type <- model$type
+  early_stop_idx <- model$early_stop_idx
+  when_init <- model$when_init
+  n_init <- model$control$n_init
+
+  var_select <- rep(0, length(var_names)) #1 means selected
+  names(var_select) <- var_names
+
+  if(model$y_init  == "LADTree"){
+    frame <-model$tree_init$frame
+    leaves <- frame$var == "<leaf>"
+    used <- as.character(unique(frame$var[!leaves]))
+    var_select[used] <- 1
+  }
+
+  if(type == "RRBoost" & (when_init < early_stop_idx)){
+    for(i in c(1:when_init, ((n_init+1):early_stop_idx))){
+      frame <-model$tree_list[[i]]$frame
+      leaves <- frame$var == "<leaf>"
+      used <- as.character(unique(frame$var[!leaves]))
+      var_select[used] <- 1
+    }
+  }else{
+    for(i in 1:early_stop_idx){  #stopped at stage 1
+      frame <-model$tree_list[[i]]$frame
+      leaves <- frame$var == "<leaf>"
+      used <- as.character(unique(frame$var[!leaves]))
+      var_select[used] <- 1
+    }
+  }
+
+  return(var_select)
+}
+
 
 
 #' cal_predict
@@ -741,9 +780,6 @@ cal_predict <- function(model, x_test, y_test){
   err_test <- data.frame(matrix(NA, nrow = early_stop_idx, ncol = length(error)))
   colnames(err_test) <- error
   control <- model$control
-
-  var_select <- rep(0, ncol(x_test)) #1 means selected
-  names(var_select) <- colnames(x_test)
   res <- list()
 
   if(save_f == TRUE){
@@ -755,19 +791,11 @@ cal_predict <- function(model, x_test, y_test){
   }
   if(model$y_init  == "LADTree"){
     f_t_test <- f_t_test_init <- predict(model$tree_init, newdata = x_test)
-    frame <-model$tree_init$frame
-    leaves <- frame$var == "<leaf>"
-    used <- as.character(unique(frame$var[!leaves]))
-    var_select[used] <- 1
   }
 
   if(type == "RRBoost" & (when_init < early_stop_idx)){
     for(i in c(1:when_init, ((n_init+1):early_stop_idx))){
       f_t_test  <-  f_t_test +    shrinkage*model$alpha[i] *predict(model$tree_list[[i]], newdata = x_test)
-      frame <-model$tree_list[[i]]$frame
-      leaves <- frame$var == "<leaf>"
-      used <- as.character(unique(frame$var[!leaves]))
-      var_select[used] <- 1
       if(save_f == TRUE){
         f_test[,i] <- f_t_test
       }
@@ -778,10 +806,6 @@ cal_predict <- function(model, x_test, y_test){
   }else{
     for(i in 1:early_stop_idx){  #stopped at stage 1
       f_t_test  <-  f_t_test +   shrinkage*model$alpha[i] *predict(model$tree_list[[i]], newdata = x_test)
-      frame <-model$tree_list[[i]]$frame
-      leaves <- frame$var == "<leaf>"
-      used <- as.character(unique(frame$var[!leaves]))
-      var_select[used] <- 1
       if(save_f == TRUE){
         f_test[,i] <- f_t_test
       }
@@ -798,7 +822,6 @@ cal_predict <- function(model, x_test, y_test){
   res$f_t_test <- f_t_test
   res$err_test <- err_test
   res$value <- err_test[early_stop_idx,]
-  res$var_select <- var_select
   return(res)
 }
 

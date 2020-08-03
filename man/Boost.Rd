@@ -52,7 +52,7 @@ A list with the following components:
 
 \item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
 \item{control}{the input control parameters}
-\item{niter}{number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
+\item{niter}{the number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 \item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
 \item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
 \item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }
@@ -65,10 +65,11 @@ A list with the following components:
 \item{err_val}{a vector of validation aad error}
 \item{err_train}{a vector of training aad error}
 \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
-\item{f_train}{matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
-\item{f_val}{matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
-\item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
-\item{var_importance}{vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
+\item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
+\item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
+\item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
+\item{var_select}{a vector of variable selection indicators (1 if selected by any of the base learners, 0 otherwise)}
+\item{var_importance}{a vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
 }
 \description{
 A function to fit RRBoost which includes options to fit L2Boost, LADBoost, MBoost, Robloss, and SBoost

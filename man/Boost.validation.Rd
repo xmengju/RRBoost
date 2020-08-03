@@ -4,11 +4,22 @@
 \alias{Boost.validation}
 \title{Boost.validation}
 \usage{
-Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
-  type = "RRBoost", error = c("rmse", "aad"), niter = 1000,
-  max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1, 2, 3,
-  4), min_leaf_size_init_set = c(10, 20, 30),
-  control = Boost.control())
+Boost.validation(
+  x_train,
+  y_train,
+  x_val,
+  y_val,
+  x_test,
+  y_test,
+  type = "RRBoost",
+  error = c("rmse", "aad"),
+  niter = 1000,
+  max_depth = 1,
+  y_init = "LADTree",
+  max_depth_init_set = c(1, 2, 3, 4),
+  min_leaf_size_init_set = c(10, 20, 30),
+  control = Boost.control()
+)
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
