@@ -18,7 +18,8 @@ Boost.control(
   save_tree = FALSE,
   precision = 4,
   save_all_err_rr = TRUE,
-  shrinkage = 1
+  shrinkage = 1,
+  trace = FALSE
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ Boost.control(
 \item{save_all_err_rr}{save validation and test error of RRBoost trained with all combination of LADTree parameters (TRUE or FALSE)}
 
 \item{shrinkage}{shrinkage parameter in boosting (numeric)}
+
+\item{trace}{an option to print the number of completed iterations and for RRBoost the completed combinations of LADTree hyperparameters for monitoring progress (TRUE or FALSE)}
 }
 \value{
 A list of all input parameters

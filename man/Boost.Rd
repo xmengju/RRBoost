@@ -68,7 +68,7 @@ A list with the following components:
 \item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
 \item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
 \item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
-\item{var_select}{a vector of variable selection indicators (1 if selected by any of the base learners, 0 otherwise)}
+\item{var_select}{a vector of variable selection indicators (1 if the variable havs been selected by at least one of the base learners, 0 otherwise)}
 \item{var_importance}{a vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
 }
 \description{

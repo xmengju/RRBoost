@@ -4,7 +4,7 @@
 \alias{cal_imp_func}
 \title{cal_imp_func}
 \usage{
-cal_imp_func(model, x_val, y_val)
+cal_imp_func(model, x_val, y_val, trace = FALSE)
 }
 \arguments{
 \item{model}{an object returned by Boost}
@@ -12,6 +12,8 @@ cal_imp_func(model, x_val, y_val)
 \item{x_val}{predictor matrix for validation data (matrix/dataframe)}
 
 \item{y_val}{response vector for validation data (vector/dataframe)}
+
+\item{trace}{an option to print the variable under calculation for monitoring progress (TRUE or FALSE)}
 }
 \value{
 \item{var_importance}{a vector of permutation variable importance}

@@ -18,12 +18,13 @@
 #' @param precision number of rounding digits to keep when using validation error to calculate early stopping time (numeric, default 4)
 #' @param save_all_err_rr save validation and test error of RRBoost trained with all combination of LADTree parameters (TRUE or FALSE)
 #' @param shrinkage shrinkage parameter in boosting (numeric)
+#' @param trace an option to print the number of completed iterations and for RRBoost the completed combinations of LADTree hyperparameters for monitoring progress (TRUE or FALSE)
 #' @return A list of all input parameters
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
-Boost.control <- function(n_init = 100,  eff_m= 0.95, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1){
+Boost.control <- function(n_init = 100,  eff_m= 0.95, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1, trace = FALSE){
 
   # if(is.null(cc_s)){
     cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi)
@@ -41,7 +42,7 @@ Boost.control <- function(n_init = 100,  eff_m= 0.95, bb = 0.5, trim_prop = NULL
   #   }
 
 
-  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision,  save_all_err_rr =  save_all_err_rr, shrinkage = shrinkage))
+  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision,  save_all_err_rr =  save_all_err_rr, shrinkage = shrinkage, trace = trace))
 }
 
 init.boosting <- function(type)
@@ -108,7 +109,7 @@ cal.ss <- function(type, f_t_train, y_train,  cc, bb) {
   }
 
   if(type %in% c("SBoost", "RRBoost")) {
-      ss <- mscale(f_t_train - y_train,  tuning.chi=cc, delta = bb)
+      ss <- RobStatTM::mscale(f_t_train - y_train,  tuning.chi=cc, delta = bb)
   }
 
   if(type == "MBoost") {
@@ -130,7 +131,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
          },
 
          SBoost = {
-           ff2 <- function(a, r, h) return(mscale(r - a*h))
+           ff2 <- function(a, r, h) return(RobStatTM::mscale(r - a*h))
            upper_region = c(0.5,10,100,300)
            tmp <-  tmp_val <- rep(NA, length(upper_region))
            for(i in 1:length(upper_region)){
@@ -155,7 +156,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
          },
          RRBoost = {
            if(init_status == 0) {
-             ff3 <- function(a, r, h) return(mscale(r - a*h))
+             ff3 <- function(a, r, h) return(RobStatTM::mscale(r - a*h))
              upper_region = c(0.5,10,100,300)
              tmp <-  tmp_val <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
@@ -266,15 +267,13 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #' \item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
 #' \item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
 #' \item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
-#' \item{var_select}{a vector of variable selection indicators (1 if selected by any of the base learners, 0 otherwise)}
+#' \item{var_select}{a vector of variable selection indicators (1 if the variable havs been selected by at least one of the base learners, 0 otherwise)}
 #' \item{var_importance}{a vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
 #'
 Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",  max_depth = 1, tree_init_provided = NULL, control = Boost.control()) {
-
-  print(type)
 
   cc <- NA; n_init <- NA;
 
@@ -287,8 +286,12 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   bb <- control$bb
   precision <- control$precision
   shrinkage <- control$shrinkage
+  trace <- control$trace
   var_select <- rep(1,ncol(x_train))  # will be updated when calling predict
 
+  if(trace){
+    print(type)
+  }
   if(type == "RRBoost"){
     n_init <- control$n_init
     cc <- control$cc_s
@@ -388,8 +391,10 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 
   for(i in 1:niter) {
 
-    if(i%%200 ==0) {
-     print(c("iteration", i))
+    if(trace){
+      if(i%%200 ==0) {
+       print(c("iteration", i))
+      }
     }
 
     if(init_status == 0) {
@@ -480,7 +485,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
         init_status <- 1
         f_t_train <- f_train_early  # rest the current one
         f_t_val <- f_val_early
-        ss <-  mscale(f_t_train - y_train,  tuning.chi= cc, delta = bb)
+        ss <-  RobStatTM::mscale(f_t_train - y_train,  tuning.chi= cc, delta = bb)
         cc <- cc_m
         loss_val[i] <- mean(func((f_t_val - y_val)/ss, cc = cc_m))
        }
@@ -569,7 +574,6 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 #'
 Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost", error = c("rmse","aad"),  niter = 1000, max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1,2,3,4), min_leaf_size_init_set = c(10,20,30), control = Boost.control()){
 
-
   control_tmp <- control
   if(control$cal_imp == TRUE){
     control_tmp$cal_imp <- FALSE
@@ -655,7 +659,9 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
             errs_test[j+1,] <- as.numeric(model_tmp$value)
           }
 
-        print(paste("leaf size:", min_leaf_size, " depths:", max_depths, " err(val):", round(err_tmp,4), " best err(val) :", round(best_err,4) ,sep = ""))
+        if(control$trace){
+            print(paste("leaf size:", min_leaf_size, " depths:", max_depths, " err(val):", round(err_tmp,4), " best err(val) :", round(best_err,4) ,sep = ""))
+        }
         if(err_tmp < best_err) {
           model_best <- model_tmp
           params <- combs[j, ]
@@ -834,13 +840,14 @@ cal_predict <- function(model, x_test, y_test){
 #'@param model an object returned by Boost
 #'@param x_val predictor matrix for validation data (matrix/dataframe)
 #'@param y_val response vector for validation data (vector/dataframe)
+#'@param trace an option to print the variable under calculation for monitoring progress (TRUE or FALSE)
 #'@return
 #' \item{var_importance}{a vector of permutation variable importance}
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
 #' @export
 #'
-cal_imp_func <- function(model,  x_val, y_val){
+cal_imp_func <- function(model,  x_val, y_val, trace = FALSE){
 
   if (exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) {
     oldseed <- get(".Random.seed", envir = .GlobalEnv, inherits = FALSE)
@@ -870,7 +877,9 @@ cal_imp_func <- function(model,  x_val, y_val){
   cal.imp.shuffle.j <- function(j){
 
     set.seed(j)
-    print(paste("calculating importance for", j, "th variable"))
+    if(trace){
+      print(paste("calculating importance for", j, "th variable"))
+    }
     x_val_j <- x_val
     x_val_j[,j] <- sample(x_val_j[,j],length(x_val_j[,j]))
 

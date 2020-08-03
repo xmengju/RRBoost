@@ -8,7 +8,7 @@ Authors@R: c(person("Xiaomeng", "Ju", role=c("aut", "cre"), email="xiaomeng.ju@s
              )
 Description: This package implements a robust boosting algorithm for regression.
 Depends: R (>= 3.5.0)
-Imports: stats, rpart, RobStatTM, robustbase
+Imports: stats, rpart, RobStatTM
 License: GPL (>= 3)
 LazyData: True
 RoxygenNote: 7.1.1
