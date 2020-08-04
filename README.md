@@ -1,7 +1,7 @@
 RRBoost: a robust boosting algorithm for regression problems
 ================
 Xiaomeng Ju and Matias Salibian Barrera
-2020-08-02
+2020-08-03
 
 This repository contains `R` code implementing the robust boosting
 algorithm [paper URL](https://github.com). This method provides an
@@ -256,12 +256,7 @@ print(all.equal(prediction$value, model_RRBoost_LADTree$value))
 print(all.equal(var_importance, model_RRBoost_LADTree$var_importance))
 ```
 
-    ## [1] "Modes: list, numeric"                                         
-    ## [2] "Component \"frequency\": Mean absolute difference: 3.781435"  
-    ## [3] "Component \"angle\": Mean absolute difference: 0.3201209"     
-    ## [4] "Component \"chord_length\": Mean absolute difference: 1.04162"
-    ## [5] "Component \"velocity\": Mean absolute difference: 0.5983525"  
-    ## [6] "Component \"thickness\": Mean absolute difference: 2.574568"
+    ## [1] TRUE
 
 Finally, we compare the performance of `RRBoost` with that of the other
 boosting algorithms implemented in the package, namely: `L2Boost`,
