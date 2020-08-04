@@ -2,7 +2,7 @@
 % Please edit documentation in R/Boost.R
 \name{Boost.validation}
 \alias{Boost.validation}
-\title{Boost.validation}
+\title{Robust Boosting for regression with initialization parameters chosen on a validation set}
 \usage{
 Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
   type = "RRBoost", error = c("rmse", "aad"), niter = 1000,
@@ -45,10 +45,43 @@ A list with components
 \item{param}{a vector of selected initialization parameters (return (0,0) if selected initialization is the median of the training responses)}
 }
 \description{
-A function to fit RRBoost where the initialization parameters are chosen by validation
+A function to fit RRBoost (see also \code{\link{Boost}}) where the initialization parameters are chosen
+based on the performance on the validation set.
 }
 \details{
-A function to fit RRBoost where the initialization parameters are chosen by validation
+This function runs the RRBoost algorithm (see \code{\link{Boost}}) on different combinations of the
+parameters for the initial fit, and chooses the optimal set based on the performance on the validation set.
+}
+\examples{
+\dontrun{
+data(airfoil)
+n <- nrow(airfoil)
+n0 <- floor( 0.2 * n )
+set.seed(123)
+idx_test <- sample(n, n0)
+idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
+idx_val <- (1:n)[ -c(idx_test, idx_train) ]
+xx <- airfoil[, -6]
+yy <- airfoil$y
+xtrain <- xx[ idx_train, ]
+ytrain <- yy[ idx_train ]
+xval <- xx[ idx_val, ]
+yval <- yy[ idx_val ]
+xtest <- xx[ idx_test, ]
+ytest <- yy[ idx_test ]
+model_RRBoost_cv_LADTree = Boost.validation(x_train = xtrain,
+      y_train = ytrain, x_val = xval, y_val = yval,
+      x_test = xtest, y_test = ytest, type = "RRBoost", error = "rmse",
+      y_init = "LADTree", max_depth = 1, niter = 1000,
+      max_depth_init_set = 1:5,
+      min_leaf_size_init_set = c(10,20,30),
+      control = Boost.control(make_prediction =  TRUE,
+      cal_imp = TRUE))
+}
+
+}
+\seealso{
+\code{\link{Boost}}, \code{\link{Boost.control}}.
 }
 \author{
 Xiaomeng Ju, \email{xmengju@stat.ubc.ca}

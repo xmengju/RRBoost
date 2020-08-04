@@ -2,7 +2,7 @@
 % Please edit documentation in R/Boost.R
 \name{Boost}
 \alias{Boost}
-\title{Boost}
+\title{Robust Boosting for regression}
 \usage{
 Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
   error = c("rmse", "aad"), niter = 200, y_init = "median",
@@ -18,37 +18,36 @@ Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
 
 \item{y_val}{response vector for validation data (vector/dataframe)}
 
-\item{x_test}{predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)}
+\item{x_test}{predictor matrix for test data (matrix/dataframe, optional)}
 
-\item{y_test}{response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)}
+\item{y_test}{response vector for test data (vector/dataframe,  optional)}
 
-\item{type}{type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)}
+\item{type}{a string indicating the desired boosting algorithm. Valid options are: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)}
 
-\item{error}{types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)}
+\item{error}{a string (or vector of strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error) (array)}
 
-\item{niter}{number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
+\item{niter}{number of boosting iterations (for RRBoost: T_{1,max} + T_{2,max}) (numeric)}
 
-\item{y_init}{the initial estimator, "median" or "LADTree" (string)}
+\item{y_init}{a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (string)}
 
 \item{max_depth}{the maximum depth of the tree learners (numeric)}
 
-\item{tree_init_provided}{provided fitted initial tree (rpart object)}
+\item{tree_init_provided}{an optional pre-fitted initial tree (an \code{rpart} object)}
 
-\item{control}{control parameters specified with Boost.control()}
+\item{control}{a named list of control parameters, as returned by with \code{\link{Boost.control}}}
 }
 \value{
 A list with the following components:
-
-\item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
-\item{control}{the input control parameters}
-\item{niter}{the number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
-\item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
-\item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
-\item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }
+\item{type}{a string indicating the boosting algorithm run (e.g. 'RRBoost',"L2Boost")}
+\item{control}{the list of control parameters used}
+\item{niter}{number of iterations for the boosting algorithm (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
+\item{error}{if \code{make_prediction = TRUE} in argument \code{control}, a vector of prediction errors evaluated on the test set at early stopping time. The length of the vector matches that of the \code{error} argument in the input.}
+\item{tree_init}{if \code{y_init = "LADTree"}, the initial tree (an object of class \code{rpart})}
+\item{tree_list}{if \code{save_tree = TRUE} in \code{control}, a list of trees fitted at each boosting iteration}
 \item{f_train_init}{a vector of initialized estimator of the training data}
 \item{alpha}{a vector of base learners' coefficients}
 \item{early_stop_idx}{early stopping iteration}
-\item{when_init}{the early stopping time of the first stage of RRBoost (returned if type = "RRBoost)}
+\item{when_init}{if \code{type = "RRBoost"}, the early stopping time of the first stage of RRBoost}
 \item{loss_train}{a vector of training loss values}
 \item{loss_val}{a vector of validation loss values}
 \item{err_val}{a vector of validation aad error}
@@ -61,10 +60,42 @@ A list with the following components:
 \item{var_importance}{a vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
 }
 \description{
-A function to fit RRBoost which includes options to fit L2Boost, LADBoost, MBoost, Robloss, and SBoost
+This function implements the RRBoost robust boosting algorithm for regression.
+Other robust and non-robust boosting algorithms for regression are also included
 }
 \details{
-A function to fit RRBoost which includes options to fit L2Boost, LADBoost, MBoost, Robloss, and SBoost
+This function implements a robust boosting algorithm for regression (RRBoost).
+It  also includes the following robust and non-robust boosting algorithms
+for regression: L2Boost, LADBoost, MBoost, Robloss, and SBoost. This function
+uses the functions available in the \code{rpart} package to construct binary regression trees.
+}
+\examples{
+data(airfoil)
+n <- nrow(airfoil)
+n0 <- floor( 0.2 * n )
+set.seed(123)
+idx_test <- sample(n, n0)
+idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
+idx_val <- (1:n)[ -c(idx_test, idx_train) ]
+xx <- airfoil[, -6]
+yy <- airfoil$y
+xtrain <- xx[ idx_train, ]
+ytrain <- yy[ idx_train ]
+xval <- xx[ idx_val, ]
+yval <- yy[ idx_val ]
+xtest <- xx[ idx_test, ]
+ytest <- yy[ idx_test ]
+model_RRBoost_LADTree = Boost(x_train = xtrain, y_train = ytrain,
+    x_val = xval, y_val = yval, x_test = xtest, y_test = ytest,
+    type = "RRBoost", error = "rmse", y_init = "LADTree",
+    max_depth = 1, niter = 10, ## to keep the running time low
+    control = Boost.control(max_depth_init = 2,
+    min_leaf_size_init = 20, make_prediction =  TRUE,
+    cal_imp = FALSE))
+
+}
+\seealso{
+\code{\link{Boost.validation}}, \code{\link{Boost.control}}.
 }
 \author{
 Xiaomeng Ju, \email{xmengju@stat.ubc.ca}

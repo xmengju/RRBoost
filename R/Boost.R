@@ -1,27 +1,54 @@
-#' Boost.control
+#' Tuning and control parameters for the robust boosting algorithm
 #'
-#' Control for Boost fits
+#' Tuning and control parameters for the RRBoost robust boosting algorithm, including the initial fit.
 #'
-#' Various parameters that control aspects of the `Boost` fit.
+#' Various tuning and control parameters for the RRBoost robust boosting algorithm implemented in the
+#' function \code{\link{Boost}},  including options for the initial fit.
 #'
 #' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
-#' @param eff_m  normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)
-#' @param bb  breakdown point of the M-scale estimator used in the SBoost step (numeric)
+#' @param eff_m scalar between 0 and 1 indicating the efficiency (measured in a linear model with Gaussian errors) of Tukey's loss function used in the 2nd stage of RRBoost.
+#' @param bb breakdown point of the M-scale estimator used in the SBoost step (numeric)
 #' @param trim_prop  trimming proportion if `trmse` is used as the performance metric (numeric)
 #' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric)
-#' @param max_depth_init the maximum depth of the initial LADTtree  (numeric, default 3)
-#' @param min_leaf_size_init the minimum number of observations per node of the initial LADTtree (numeric)
-#' @param cal_imp calculate variable importance  (TRUE or FALSE)
-#' @param save_f save the function estimates at all iterations (TRUE or FALSE)
-#' @param make_prediction make predictions using x_test  (TRUE or FALSE)
-#' @param save_tree save trees at all iterations  (TRUE or FALSE)
-#' @param precision number of rounding digits to keep when using validation error to calculate early stopping time (numeric, default 4)
-#' @param save_all_err_rr save validation and test error of RRBoost trained with all combination of LADTree parameters (TRUE or FALSE)
-#' @param shrinkage shrinkage parameter in boosting (numeric)
-#' @param trace an option to print the number of completed iterations and for RRBoost the completed combinations of LADTree hyperparameters for monitoring progress (TRUE or FALSE)
+#' @param max_depth_init the maximum depth of the initial LADTtree  (numeric, defaults to 3)
+#' @param min_leaf_size_init the minimum number of observations per node of the initial LADTtree (numeric, defaults to 10)
+#' @param cal_imp logical indicating whether to calculate variable importance  (defaults to \code{TRUE})
+#' @param save_f logical indicating whether to save the function estimates at all iterations (defaults to \code{TRUE})
+#' @param make_prediction logical indicating whether to make predictions using \code{x_test} (defaults to \code{TRUE})
+#' @param save_tree logical indicating whether to save trees at all iterations  (defaults to \code{FALSE})
+#' @param precision number of significant digits to keep when using validation error to calculate early stopping time (numeric, defaults to 4)
+#' @param save_all_err_rr logical indicating whether to save validation and test error of RRBoost trained with all combination of LADTree parameters (defaults to \code{TRUE})
+#' @param shrinkage shrinkage parameter in boosting (numeric, defaults to 1 which corresponds to no shrinkage)
+#' @param trace logical indicating whether to print the number of completed iterations and for RRBoost the completed combinations of LADTree hyperparameters for monitoring progress (defaults to \code{FALSE})
+#'
 #' @return A list of all input parameters
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#'
+#' @examples
+#' data(airfoil)
+#' n <- nrow(airfoil)
+#' n0 <- floor( 0.2 * n )
+#' set.seed(123)
+#' idx_test <- sample(n, n0)
+#' idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
+#' idx_val <- (1:n)[ -c(idx_test, idx_train) ]
+#' xx <- airfoil[, -6]
+#' yy <- airfoil$y
+#' xtrain <- xx[ idx_train, ]
+#' ytrain <- yy[ idx_train ]
+#' xval <- xx[ idx_val, ]
+#' yval <- yy[ idx_val ]
+#' xtest <- xx[ idx_test, ]
+#' ytest <- yy[ idx_test ]
+#' my.control <- Boost.control(max_depth_init = 2,
+#'     min_leaf_size_init = 20, make_prediction =  TRUE,
+#'     cal_imp = FALSE)
+#' model_RRBoost_LADTree = Boost(x_train = xtrain, y_train = ytrain,
+#'     x_val = xval, y_val = yval, x_test = xtest, y_test = ytest,
+#'     type = "RRBoost", error = "rmse", y_init = "LADTree",
+#'     max_depth = 1, niter = 10, ## to keep the running time low
+#'     control = my.control)
 #'
 #' @export
 Boost.control <- function(n_init = 100,  eff_m= 0.95, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1, trace = FALSE){
@@ -228,37 +255,41 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 
 
 
-#' Boost
+#' Robust Boosting for regression
 #'
-#' A function to fit RRBoost which includes options to fit L2Boost, LADBoost, MBoost, Robloss, and SBoost
+#' This function implements the RRBoost robust boosting algorithm for regression.
+#' Other robust and non-robust boosting algorithms for regression are also included
 #'
-#' A function to fit RRBoost which includes options to fit L2Boost, LADBoost, MBoost, Robloss, and SBoost
+#' This function implements a robust boosting algorithm for regression (RRBoost).
+#' It  also includes the following robust and non-robust boosting algorithms
+#' for regression: L2Boost, LADBoost, MBoost, Robloss, and SBoost. This function
+#' uses the functions available in the \code{rpart} package to construct binary regression trees.
 #'
-#'@param x_train predictor matrix for training data (matrix/dataframe)
-#'@param y_train response vector for training data (vector/dataframe)
-#'@param x_val predictor matrix for validation data (matrix/dataframe)
-#'@param y_val response vector for validation data (vector/dataframe)
-#'@param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
-#'@param y_test response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)
-#'@param type type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)
-#'@param error types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)
-#'@param y_init the initial estimator, "median" or "LADTree" (string)
-#'@param max_depth the maximum depth of the tree learners (numeric)
-#'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
-#'@param tree_init_provided provided fitted initial tree (rpart object)
-#'@param control control parameters specified with Boost.control()
-#'@return A list with the following components:
+#' @param x_train predictor matrix for training data (matrix/dataframe)
+#' @param y_train response vector for training data (vector/dataframe)
+#' @param x_val predictor matrix for validation data (matrix/dataframe)
+#' @param y_val response vector for validation data (vector/dataframe)
+#' @param x_test predictor matrix for test data (matrix/dataframe, optional)
+#' @param y_test response vector for test data (vector/dataframe,  optional)
+#' @param type a string indicating the desired boosting algorithm. Valid options are: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)
+#' @param error a string (or vector of strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error) (array)
+#' @param y_init a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (string)
+#' @param max_depth the maximum depth of the tree learners (numeric)
+#' @param niter number of boosting iterations (for RRBoost: T_{1,max} + T_{2,max}) (numeric)
+#' @param tree_init_provided an optional pre-fitted initial tree (an \code{rpart} object)
+#' @param control a named list of control parameters, as returned by with \code{\link{Boost.control}}
 #'
-#' \item{type}{type of the boosting estimator (e.g. 'RRBoost',"L2Boost")}
-#' \item{control}{the input control parameters}
-#' \item{niter}{the number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
-#' \item{error}{a vector of error values evaluated on the test set at early stopping time. The length of the vector depends on the `error` argument in the input.  (returned if make_prediction = TRUE in control).}
-#' \item{tree_init}{the initial tree (rpart object, returned if y_init = "LADTree")}
-#' \item{tree_list}{a list of trees fitted at each iteration (returned if save_tree = TRUE in control) }
+#' @return A list with the following components:
+#' \item{type}{a string indicating the boosting algorithm run (e.g. 'RRBoost',"L2Boost")}
+#' \item{control}{the list of control parameters used}
+#' \item{niter}{number of iterations for the boosting algorithm (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
+#' \item{error}{if \code{make_prediction = TRUE} in argument \code{control}, a vector of prediction errors evaluated on the test set at early stopping time. The length of the vector matches that of the \code{error} argument in the input.}
+#' \item{tree_init}{if \code{y_init = "LADTree"}, the initial tree (an object of class \code{rpart})}
+#' \item{tree_list}{if \code{save_tree = TRUE} in \code{control}, a list of trees fitted at each boosting iteration}
 #' \item{f_train_init}{a vector of initialized estimator of the training data}
 #' \item{alpha}{a vector of base learners' coefficients}
 #' \item{early_stop_idx}{early stopping iteration}
-#' \item{when_init}{the early stopping time of the first stage of RRBoost (returned if type = "RRBoost)}
+#' \item{when_init}{if \code{type = "RRBoost"}, the early stopping time of the first stage of RRBoost}
 #' \item{loss_train}{a vector of training loss values}
 #' \item{loss_val}{a vector of validation loss values}
 #' \item{err_val}{a vector of validation aad error}
@@ -269,10 +300,36 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #' \item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
 #' \item{var_select}{a vector of variable selection indicators (1 if the variable havs been selected by at least one of the base learners, 0 otherwise)}
 #' \item{var_importance}{a vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
+#'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
-#' @export
+#' @seealso \code{\link{Boost.validation}}, \code{\link{Boost.control}}.
 #'
+#' @examples
+#' data(airfoil)
+#' n <- nrow(airfoil)
+#' n0 <- floor( 0.2 * n )
+#' set.seed(123)
+#' idx_test <- sample(n, n0)
+#' idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
+#' idx_val <- (1:n)[ -c(idx_test, idx_train) ]
+#' xx <- airfoil[, -6]
+#' yy <- airfoil$y
+#' xtrain <- xx[ idx_train, ]
+#' ytrain <- yy[ idx_train ]
+#' xval <- xx[ idx_val, ]
+#' yval <- yy[ idx_val ]
+#' xtest <- xx[ idx_test, ]
+#' ytest <- yy[ idx_test ]
+#' model_RRBoost_LADTree = Boost(x_train = xtrain, y_train = ytrain,
+#'     x_val = xval, y_val = yval, x_test = xtest, y_test = ytest,
+#'     type = "RRBoost", error = "rmse", y_init = "LADTree",
+#'     max_depth = 1, niter = 10, ## to keep the running time low
+#'     control = Boost.control(max_depth_init = 2,
+#'     min_leaf_size_init = 20, make_prediction =  TRUE,
+#'     cal_imp = FALSE))
+#'
+#' @export
 Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",  max_depth = 1, tree_init_provided = NULL, control = Boost.control()) {
 
   cc <- NA; n_init <- NA;
@@ -544,11 +601,13 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
   return(model)
 }
 
-#' Boost.validation
+#' Robust Boosting for regression with initialization parameters chosen on a validation set
 #'
-#' A function to fit RRBoost where the initialization parameters are chosen by validation
+#' A function to fit RRBoost (see also \code{\link{Boost}}) where the initialization parameters are chosen
+#' based on the performance on the validation set.
 #'
-#' A function to fit RRBoost where the initialization parameters are chosen by validation
+#' This function runs the RRBoost algorithm (see \code{\link{Boost}}) on different combinations of the
+#' parameters for the initial fit, and chooses the optimal set based on the performance on the validation set.
 #'
 #'@param x_train predictor matrix for training data (matrix/dataframe)
 #'@param y_train response vector for training data (vector/dataframe)
@@ -568,10 +627,39 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 #'@return A list with components
 #' \item{the components of model}{an object returned by Boost that is trained with selected initialization parameters}
 #' \item{param}{a vector of selected initialization parameters (return (0,0) if selected initialization is the median of the training responses)}
+#'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
-#' @export
+#' @seealso \code{\link{Boost}}, \code{\link{Boost.control}}.
 #'
+#' @examples
+#' \dontrun{
+#' data(airfoil)
+#' n <- nrow(airfoil)
+#' n0 <- floor( 0.2 * n )
+#' set.seed(123)
+#' idx_test <- sample(n, n0)
+#' idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
+#' idx_val <- (1:n)[ -c(idx_test, idx_train) ]
+#' xx <- airfoil[, -6]
+#' yy <- airfoil$y
+#' xtrain <- xx[ idx_train, ]
+#' ytrain <- yy[ idx_train ]
+#' xval <- xx[ idx_val, ]
+#' yval <- yy[ idx_val ]
+#' xtest <- xx[ idx_test, ]
+#' ytest <- yy[ idx_test ]
+#' model_RRBoost_cv_LADTree = Boost.validation(x_train = xtrain,
+#'       y_train = ytrain, x_val = xval, y_val = yval,
+#'       x_test = xtest, y_test = ytest, type = "RRBoost", error = "rmse",
+#'       y_init = "LADTree", max_depth = 1, niter = 1000,
+#'       max_depth_init_set = 1:5,
+#'       min_leaf_size_init_set = c(10,20,30),
+#'       control = Boost.control(make_prediction =  TRUE,
+#'       cal_imp = TRUE))
+#' }
+#'
+#' @export
 Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost", error = c("rmse","aad"),  niter = 1000, max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1,2,3,4), min_leaf_size_init_set = c(10,20,30), control = Boost.control()){
 
   control_tmp <- control

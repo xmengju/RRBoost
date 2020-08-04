@@ -2,7 +2,7 @@
 % Please edit documentation in R/Boost.R
 \name{Boost.control}
 \alias{Boost.control}
-\title{Boost.control}
+\title{Tuning and control parameters for the robust boosting algorithm}
 \usage{
 Boost.control(n_init = 100, eff_m = 0.95, bb = 0.5,
   trim_prop = NULL, trim_c = 3, max_depth_init = 3,
@@ -13,7 +13,7 @@ Boost.control(n_init = 100, eff_m = 0.95, bb = 0.5,
 \arguments{
 \item{n_init}{number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)}
 
-\item{eff_m}{normal efficiency of tukey's loss in RRBoost (2nd stage) (numeric)}
+\item{eff_m}{scalar between 0 and 1 indicating the efficiency (measured in a linear model with Gaussian errors) of Tukey's loss function used in the 2nd stage of RRBoost.}
 
 \item{bb}{breakdown point of the M-scale estimator used in the SBoost step (numeric)}
 
@@ -21,34 +21,61 @@ Boost.control(n_init = 100, eff_m = 0.95, bb = 0.5,
 
 \item{trim_c}{the trimming constant if `trmse` is used as the performance metric (numeric)}
 
-\item{max_depth_init}{the maximum depth of the initial LADTtree  (numeric, default 3)}
+\item{max_depth_init}{the maximum depth of the initial LADTtree  (numeric, defaults to 3)}
 
-\item{min_leaf_size_init}{the minimum number of observations per node of the initial LADTtree (numeric)}
+\item{min_leaf_size_init}{the minimum number of observations per node of the initial LADTtree (numeric, defaults to 10)}
 
-\item{cal_imp}{calculate variable importance  (TRUE or FALSE)}
+\item{cal_imp}{logical indicating whether to calculate variable importance  (defaults to \code{TRUE})}
 
-\item{save_f}{save the function estimates at all iterations (TRUE or FALSE)}
+\item{save_f}{logical indicating whether to save the function estimates at all iterations (defaults to \code{TRUE})}
 
-\item{make_prediction}{make predictions using x_test  (TRUE or FALSE)}
+\item{make_prediction}{logical indicating whether to make predictions using \code{x_test} (defaults to \code{TRUE})}
 
-\item{save_tree}{save trees at all iterations  (TRUE or FALSE)}
+\item{save_tree}{logical indicating whether to save trees at all iterations  (defaults to \code{FALSE})}
 
-\item{precision}{number of rounding digits to keep when using validation error to calculate early stopping time (numeric, default 4)}
+\item{precision}{number of significant digits to keep when using validation error to calculate early stopping time (numeric, defaults to 4)}
 
-\item{save_all_err_rr}{save validation and test error of RRBoost trained with all combination of LADTree parameters (TRUE or FALSE)}
+\item{save_all_err_rr}{logical indicating whether to save validation and test error of RRBoost trained with all combination of LADTree parameters (defaults to \code{TRUE})}
 
-\item{shrinkage}{shrinkage parameter in boosting (numeric)}
+\item{shrinkage}{shrinkage parameter in boosting (numeric, defaults to 1 which corresponds to no shrinkage)}
 
-\item{trace}{an option to print the number of completed iterations and for RRBoost the completed combinations of LADTree hyperparameters for monitoring progress (TRUE or FALSE)}
+\item{trace}{logical indicating whether to print the number of completed iterations and for RRBoost the completed combinations of LADTree hyperparameters for monitoring progress (defaults to \code{FALSE})}
 }
 \value{
 A list of all input parameters
 }
 \description{
-Control for Boost fits
+Tuning and control parameters for the RRBoost robust boosting algorithm, including the initial fit.
 }
 \details{
-Various parameters that control aspects of the `Boost` fit.
+Various tuning and control parameters for the RRBoost robust boosting algorithm implemented in the
+function \code{\link{Boost}},  including options for the initial fit.
+}
+\examples{
+data(airfoil)
+n <- nrow(airfoil)
+n0 <- floor( 0.2 * n )
+set.seed(123)
+idx_test <- sample(n, n0)
+idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
+idx_val <- (1:n)[ -c(idx_test, idx_train) ]
+xx <- airfoil[, -6]
+yy <- airfoil$y
+xtrain <- xx[ idx_train, ]
+ytrain <- yy[ idx_train ]
+xval <- xx[ idx_val, ]
+yval <- yy[ idx_val ]
+xtest <- xx[ idx_test, ]
+ytest <- yy[ idx_test ]
+my.control <- Boost.control(max_depth_init = 2,
+    min_leaf_size_init = 20, make_prediction =  TRUE,
+    cal_imp = FALSE)
+model_RRBoost_LADTree = Boost(x_train = xtrain, y_train = ytrain,
+    x_val = xval, y_val = yval, x_test = xtest, y_test = ytest,
+    type = "RRBoost", error = "rmse", y_init = "LADTree",
+    max_depth = 1, niter = 10, ## to keep the running time low
+    control = my.control)
+
 }
 \author{
 Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
