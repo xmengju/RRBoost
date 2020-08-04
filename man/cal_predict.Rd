@@ -27,6 +27,34 @@ A function to make predictions and calculate test error given an object returned
 \details{
 A function to make predictions and calculate test error given an object returned by Boost and test data
 }
+\examples{
+\dontrun{
+data(airfoil)
+n <- nrow(airfoil)
+n0 <- floor( 0.2 * n )
+set.seed(123)
+idx_test <- sample(n, n0)
+idx_train <- sample((1:n)[-idx_test], floor( 0.6 * n ) )
+idx_val <- (1:n)[ -c(idx_test, idx_train) ]
+xx <- airfoil[, -6]
+yy <- airfoil$y
+xtrain <- xx[ idx_train, ]
+ytrain <- yy[ idx_train ]
+xval <- xx[ idx_val, ]
+yval <- yy[ idx_val ]
+xtest <- xx[ idx_test, ]
+ytest <- yy[ idx_test ]
+model = Boost(x_train = xtrain, y_train = ytrain,
+     x_val = xval, y_val = yval,
+     type = "RRBoost", error = "rmse",
+     y_init = "LADTree", max_depth = 1, niter = 1000,
+     control = Boost.control(max_depth_init = 2,
+           min_leaf_size_init = 20, save_tree = TRUE,
+           make_prediction =  FALSE, cal_imp = FALSE))
+prediction <- cal_predict(model, x_test = xtest, y_test = ytest)
+}
+
+}
 \author{
 Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 }
