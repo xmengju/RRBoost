@@ -4,11 +4,23 @@
 \alias{Boost.control}
 \title{Tuning and control parameters for the robust boosting algorithm}
 \usage{
-Boost.control(n_init = 100, eff_m = 0.95, bb = 0.5,
-  trim_prop = NULL, trim_c = 3, max_depth_init = 3,
-  min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE,
-  make_prediction = TRUE, save_tree = FALSE, precision = 4,
-  save_all_err_rr = TRUE, shrinkage = 1, trace = FALSE)
+Boost.control(
+  n_init = 100,
+  eff_m = 0.95,
+  bb = 0.5,
+  trim_prop = NULL,
+  trim_c = 3,
+  max_depth_init = 3,
+  min_leaf_size_init = 10,
+  cal_imp = TRUE,
+  save_f = FALSE,
+  make_prediction = TRUE,
+  save_tree = FALSE,
+  precision = 4,
+  save_all_err_rr = TRUE,
+  shrinkage = 1,
+  trace = FALSE
+)
 }
 \arguments{
 \item{n_init}{number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)}
@@ -17,9 +29,9 @@ Boost.control(n_init = 100, eff_m = 0.95, bb = 0.5,
 
 \item{bb}{breakdown point of the M-scale estimator used in the SBoost step (numeric)}
 
-\item{trim_prop}{trimming proportion if `trmse` is used as the performance metric (numeric)}
+\item{trim_prop}{trimming proportion if `trmse` is used as the performance metric (numeric). The data deemed as non-outliers are defined to have residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution.  For example,  trim_prop = 0.1 ignored 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles. If the user specifies both trim_prop and trim_c, trim_c will be used.}
 
-\item{trim_c}{the trimming constant if `trmse` is used as the performance metric (numeric)}
+\item{trim_c}{the trimming constant if `trmse` is used as the performance metric (numeric). The data deemed as non-outliers are those with residuals (r)  between median(r) + trim_c mad(r) and median(r) - trim_c mad(r), and trmse calculates RMSE for non-outliers only. If the user specifies both trim_prop and trim_c, trim_c will be used.}
 
 \item{max_depth_init}{the maximum depth of the initial LADTtree  (numeric, defaults to 3)}
 

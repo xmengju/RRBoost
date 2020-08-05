@@ -4,10 +4,21 @@
 \alias{Boost}
 \title{Robust Boosting for regression}
 \usage{
-Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
-  error = c("rmse", "aad"), niter = 200, y_init = "median",
-  max_depth = 1, tree_init_provided = NULL,
-  control = Boost.control())
+Boost(
+  x_train,
+  y_train,
+  x_val,
+  y_val,
+  x_test,
+  y_test,
+  type = "L2Boost",
+  error = c("rmse", "aad"),
+  niter = 200,
+  y_init = "median",
+  max_depth = 1,
+  tree_init_provided = NULL,
+  control = Boost.control()
+)
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -48,16 +59,16 @@ A list with the following components:
 \item{alpha}{a vector of base learners' coefficients}
 \item{early_stop_idx}{early stopping iteration}
 \item{when_init}{if \code{type = "RRBoost"}, the early stopping time of the first stage of RRBoost}
-\item{loss_train}{a vector of training loss values}
-\item{loss_val}{a vector of validation loss values}
-\item{err_val}{a vector of validation aad error}
-\item{err_train}{a vector of training aad error}
-\item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
-\item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
-\item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
-\item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
-\item{var_select}{a vector of variable selection indicators (1 if the variable havs been selected by at least one of the base learners, 0 otherwise)}
-\item{var_importance}{a vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
+\item{loss_train}{a vector of training loss values (one value per iteration)}
+\item{loss_val}{a vector of validation loss values (one value per iteration)}
+\item{err_val}{a vector of validation aad errors (one value per iteration)}
+\item{err_train}{a vector of training aad errors (one value per iteration)}
+\item{err_test}{a matrix of test errors before and at the early stopping time (returned if make_prediction = TRUE in control); the row dimension is the early stopping time, and the column dimension is how many types of errors to return (specidied by error); each row corresponds to the test errors at each iteration}
+\item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
+\item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
+\item{f_test}{a matrix of test function estimates at iterations before and at the early stopping time (returned if save_f = TRUE and make_prediction = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
+\item{var_select}{a vector of variable selection indicators (one value per explanatory variable; 1 if the variable havs been selected by at least one of the base learners, and 0 otherwise)}
+\item{var_importance}{a vector of permutation importance measures at early stopping time (one value per explanatory variable, and returned if cal_imp = TRUE in control)}
 }
 \description{
 This function implements the RRBoost robust boosting algorithm for regression.

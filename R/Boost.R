@@ -8,8 +8,8 @@
 #' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
 #' @param eff_m scalar between 0 and 1 indicating the efficiency (measured in a linear model with Gaussian errors) of Tukey's loss function used in the 2nd stage of RRBoost.
 #' @param bb breakdown point of the M-scale estimator used in the SBoost step (numeric)
-#' @param trim_prop  trimming proportion if `trmse` is used as the performance metric (numeric)
-#' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric)
+#' @param trim_prop trimming proportion if `trmse` is used as the performance metric (numeric). The data deemed as non-outliers are defined to have residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution.  For example,  trim_prop = 0.1 ignored 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles. If the user specifies both trim_prop and trim_c, trim_c will be used.
+#' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric). The data deemed as non-outliers are those with residuals (r)  between median(r) + trim_c mad(r) and median(r) - trim_c mad(r), and trmse calculates RMSE for non-outliers only. If the user specifies both trim_prop and trim_c, trim_c will be used.
 #' @param max_depth_init the maximum depth of the initial LADTtree  (numeric, defaults to 3)
 #' @param min_leaf_size_init the minimum number of observations per node of the initial LADTtree (numeric, defaults to 10)
 #' @param cal_imp logical indicating whether to calculate variable importance  (defaults to \code{TRUE})
@@ -290,16 +290,16 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #' \item{alpha}{a vector of base learners' coefficients}
 #' \item{early_stop_idx}{early stopping iteration}
 #' \item{when_init}{if \code{type = "RRBoost"}, the early stopping time of the first stage of RRBoost}
-#' \item{loss_train}{a vector of training loss values}
-#' \item{loss_val}{a vector of validation loss values}
-#' \item{err_val}{a vector of validation aad error}
-#' \item{err_train}{a vector of training aad error}
-#' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
-#' \item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control)}
-#' \item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control)}
-#' \item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE and make_prediction = TRUE in control)}
-#' \item{var_select}{a vector of variable selection indicators (1 if the variable havs been selected by at least one of the base learners, 0 otherwise)}
-#' \item{var_importance}{a vector of permutation importance at early stopping time (returned if cal_imp = TRUE in control)}
+#' \item{loss_train}{a vector of training loss values (one value per iteration)}
+#' \item{loss_val}{a vector of validation loss values (one value per iteration)}
+#' \item{err_val}{a vector of validation aad errors (one value per iteration)}
+#' \item{err_train}{a vector of training aad errors (one value per iteration)}
+#' \item{err_test}{a matrix of test errors before and at the early stopping time (returned if make_prediction = TRUE in control); the row dimension is the early stopping time, and the column dimension is how many types of errors to return (specidied by error); each row corresponds to the test errors at each iteration}
+#' \item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
+#' \item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
+#' \item{f_test}{a matrix of test function estimates at iterations before and at the early stopping time (returned if save_f = TRUE and make_prediction = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
+#' \item{var_select}{a vector of variable selection indicators (one value per explanatory variable; 1 if the variable havs been selected by at least one of the base learners, and 0 otherwise)}
+#' \item{var_importance}{a vector of permutation importance measures at early stopping time (one value per explanatory variable, and returned if cal_imp = TRUE in control)}
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
@@ -846,7 +846,7 @@ find_val <- function(model, var_names){
 #'@return A list with with the following components:
 #'
 #' \item{f_t_test}{predicted values with model using x_test as the predictors}
-#' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
+#' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control); the row dimension is the early stopping time, and the column dimension is how many types of errors to return (specidied by error); each row corresponds to the test errors at each iteration (before early stopping)}
 #' \item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE in control)}
 #' \item{value}{a vector of test error evaluated at early stopping time}
 #'
