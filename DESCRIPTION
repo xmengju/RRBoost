@@ -11,5 +11,5 @@ Depends: R (>= 3.5.0)
 Imports: stats, rpart, RobStatTM
 License: GPL (>= 3)
 LazyData: True
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Encoding: UTF-8

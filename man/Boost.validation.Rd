@@ -4,11 +4,22 @@
 \alias{Boost.validation}
 \title{Robust Boosting for regression with initialization parameters chosen on a validation set}
 \usage{
-Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
-  type = "RRBoost", error = c("rmse", "aad"), niter = 1000,
-  max_depth = 1, y_init = "LADTree", max_depth_init_set = c(1, 2, 3,
-  4), min_leaf_size_init_set = c(10, 20, 30),
-  control = Boost.control())
+Boost.validation(
+  x_train,
+  y_train,
+  x_val,
+  y_val,
+  x_test,
+  y_test,
+  type = "RRBoost",
+  error = c("rmse", "aad"),
+  niter = 1000,
+  max_depth = 1,
+  y_init = "LADTree",
+  max_depth_init_set = c(1, 2, 3, 4),
+  min_leaf_size_init_set = c(10, 20, 30),
+  control = Boost.control()
+)
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -23,21 +34,21 @@ Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
 
 \item{y_test}{response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)}
 
-\item{type}{type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)}
+\item{type}{type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 
-\item{error}{types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)}
+\item{error}{a character string (or vector of character strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error)}
 
 \item{niter}{number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 
 \item{max_depth}{the maximum depth of the tree learners (numeric)}
 
-\item{y_init}{the initial estimator, "median" or "LADTree" (string)}
+\item{y_init}{a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)}
 
 \item{max_depth_init_set}{a vector of possible values of the maximum depth of the initial LADTree that the algorithm choses from}
 
 \item{min_leaf_size_init_set}{a vector of possible values of the minimum observations per node of the initial LADTree that the algorithm choses from}
 
-\item{control}{control parameters specified with Boost.control()}
+\item{control}{a named list of control parameters, as returned by with Boost.control}
 }
 \value{
 A list with components

@@ -5,19 +5,18 @@
 #' Various tuning and control parameters for the RRBoost robust boosting algorithm implemented in the
 #' function \code{\link{Boost}},  including options for the initial fit.
 #'
-#' @param n_init number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)
+#' @param n_init number of iterations for the SBoost step of RRBoost ($T_{1,max}$) (int)
 #' @param eff_m scalar between 0 and 1 indicating the efficiency (measured in a linear model with Gaussian errors) of Tukey's loss function used in the 2nd stage of RRBoost.
 #' @param bb breakdown point of the M-scale estimator used in the SBoost step (numeric)
-#' @param trim_prop trimming proportion if `trmse` is used as the performance metric (numeric). The data deemed as non-outliers are defined to have residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution.  For example,  trim_prop = 0.1 ignored 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles. If the user specifies both trim_prop and trim_c, trim_c will be used.
-#' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric). The data deemed as non-outliers are those with residuals (r)  between median(r) + trim_c mad(r) and median(r) - trim_c mad(r), and trmse calculates RMSE for non-outliers only. If the user specifies both trim_prop and trim_c, trim_c will be used.
+#' @param trim_prop trimming proportion if `trmse` is used as the performance metric (numeric). 'trmse' calculates mean squared error of residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution (e.g. trim_prop = 0.1 ignores 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles). If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
+#' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric, defaults to 3). 'trmse' calculates mean squared error of residuals (r) between median(r) + trim_c mad(r) and median(r) - trim_c mad(r).  If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
 #' @param max_depth_init the maximum depth of the initial LADTtree  (numeric, defaults to 3)
 #' @param min_leaf_size_init the minimum number of observations per node of the initial LADTtree (numeric, defaults to 10)
 #' @param cal_imp logical indicating whether to calculate variable importance  (defaults to \code{TRUE})
-#' @param save_f logical indicating whether to save the function estimates at all iterations (defaults to \code{TRUE})
+#' @param save_f logical indicating whether to save the function estimates at all iterations (defaults to \code{FALSE})
 #' @param make_prediction logical indicating whether to make predictions using \code{x_test} (defaults to \code{TRUE})
 #' @param save_tree logical indicating whether to save trees at all iterations  (defaults to \code{FALSE})
 #' @param precision number of significant digits to keep when using validation error to calculate early stopping time (numeric, defaults to 4)
-#' @param save_all_err_rr logical indicating whether to save validation and test error of RRBoost trained with all combination of LADTree parameters (defaults to \code{TRUE})
 #' @param shrinkage shrinkage parameter in boosting (numeric, defaults to 1 which corresponds to no shrinkage)
 #' @param trace logical indicating whether to print the number of completed iterations and for RRBoost the completed combinations of LADTree hyperparameters for monitoring progress (defaults to \code{FALSE})
 #'
@@ -51,7 +50,7 @@
 #'     control = my.control)
 #'
 #' @export
-Boost.control <- function(n_init = 100,  eff_m= 0.95, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4, save_all_err_rr = TRUE, shrinkage = 1, trace = FALSE){
+Boost.control <- function(n_init = 100,  eff_m= 0.95, bb = 0.5, trim_prop = NULL, trim_c = 3, max_depth_init = 3, min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE, make_prediction = TRUE, save_tree = FALSE, precision = 4,  shrinkage = 1, trace = FALSE){
 
   # if(is.null(cc_s)){
     cc_s <- as.numeric(RobStatTM::lmrobdet.control(bb=.5, family='bisquare')$tuning.chi)
@@ -69,7 +68,7 @@ Boost.control <- function(n_init = 100,  eff_m= 0.95, bb = 0.5, trim_prop = NULL
   #   }
 
 
-  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision,  save_all_err_rr =  save_all_err_rr, shrinkage = shrinkage, trace = trace))
+  return(list(n_init = n_init,  cc_s = cc_s, cc_m = cc_m, bb = bb, trim_prop = trim_prop, trim_c = trim_c, max_depth_init = max_depth_init, min_leaf_size_init = min_leaf_size_init, cal_imp = cal_imp,  save_f = save_f, make_prediction = make_prediction, save_tree = save_tree, precision = precision, shrinkage = shrinkage, trace = trace))
 }
 
 init.boosting <- function(type)
@@ -269,37 +268,37 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #' @param y_train response vector for training data (vector/dataframe)
 #' @param x_val predictor matrix for validation data (matrix/dataframe)
 #' @param y_val response vector for validation data (vector/dataframe)
-#' @param x_test predictor matrix for test data (matrix/dataframe, optional)
-#' @param y_test response vector for test data (vector/dataframe,  optional)
-#' @param type a string indicating the desired boosting algorithm. Valid options are: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)
-#' @param error a string (or vector of strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error) (array)
-#' @param y_init a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (string)
+#' @param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
+#' @param y_test response vector for test data (vector/dataframe, optional, required when make_prediction in control = TRUE)
+#' @param type type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)
+#' @param error a character string (or vector of character strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error)
+#' @param y_init a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)
 #' @param max_depth the maximum depth of the tree learners (numeric)
 #' @param niter number of boosting iterations (for RRBoost: T_{1,max} + T_{2,max}) (numeric)
 #' @param tree_init_provided an optional pre-fitted initial tree (an \code{rpart} object)
 #' @param control a named list of control parameters, as returned by with \code{\link{Boost.control}}
 #'
 #' @return A list with the following components:
-#' \item{type}{a string indicating the boosting algorithm run (e.g. 'RRBoost',"L2Boost")}
+#' \item{type}{type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 #' \item{control}{the list of control parameters used}
 #' \item{niter}{number of iterations for the boosting algorithm (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 #' \item{error}{if \code{make_prediction = TRUE} in argument \code{control}, a vector of prediction errors evaluated on the test set at early stopping time. The length of the vector matches that of the \code{error} argument in the input.}
 #' \item{tree_init}{if \code{y_init = "LADTree"}, the initial tree (an object of class \code{rpart})}
 #' \item{tree_list}{if \code{save_tree = TRUE} in \code{control}, a list of trees fitted at each boosting iteration}
-#' \item{f_train_init}{a vector of initialized estimator of the training data}
+#' \item{f_train_init}{a vector of the initialized estimator of the training data}
 #' \item{alpha}{a vector of base learners' coefficients}
 #' \item{early_stop_idx}{early stopping iteration}
 #' \item{when_init}{if \code{type = "RRBoost"}, the early stopping time of the first stage of RRBoost}
-#' \item{loss_train}{a vector of training loss values (one value per iteration)}
-#' \item{loss_val}{a vector of validation loss values (one value per iteration)}
-#' \item{err_val}{a vector of validation aad errors (one value per iteration)}
-#' \item{err_train}{a vector of training aad errors (one value per iteration)}
-#' \item{err_test}{a matrix of test errors before and at the early stopping time (returned if make_prediction = TRUE in control); the row dimension is the early stopping time, and the column dimension is how many types of errors to return (specidied by error); each row corresponds to the test errors at each iteration}
+#' \item{loss_train}{a vector of training loss values (one per iteration)}
+#' \item{loss_val}{a vector of validation loss values (one per iteration)}
+#' \item{err_val}{a vector of validation aad errors (one per iteration)}
+#' \item{err_train}{a vector of training aad errors (one  per iteration)}
+#' \item{err_test}{a matrix of test errors before and at the early stopping iteration (returned if make_prediction = TRUE in control); the matrix dimension is the early stopping iteration by the number of error types (matches the \code{error} argument in the input); each row corresponds to the test errors at each iteration}
 #' \item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
 #' \item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
-#' \item{f_test}{a matrix of test function estimates at iterations before and at the early stopping time (returned if save_f = TRUE and make_prediction = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
-#' \item{var_select}{a vector of variable selection indicators (one value per explanatory variable; 1 if the variable havs been selected by at least one of the base learners, and 0 otherwise)}
-#' \item{var_importance}{a vector of permutation importance measures at early stopping time (one value per explanatory variable, and returned if cal_imp = TRUE in control)}
+#' \item{f_test}{a matrix of test function estimatesbefore and at the early stopping iteration (returned if save_f = TRUE and make_prediction = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
+#' \item{var_select}{a vector of variable selection indicators (one  per explanatory variable; 1 if the variable was selected by at least one of the base learners, and 0 otherwise)}
+#' \item{var_importance}{ a vector of permutation variable importance scores (one per explanatory variable, and returned if cal_imp = TRUE in control)}
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
@@ -615,12 +614,12 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 #'@param y_val response vector for validation data (vector/dataframe)
 #'@param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
 #'@param y_test response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)
-#'@param type type of the boosting method: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)
-#'@param error types of the error metric on the test set: "rmse","aad"(average absulute deviation), or "trmse" (trimmed rmse) (array)
-#'@param y_init the initial estimator, "median" or "LADTree" (string)
+#'@param type type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)
+#'@param error a character string (or vector of character strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error)
+#'@param y_init a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)
 #'@param max_depth the maximum depth of the tree learners (numeric)
 #'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
-#'@param control control parameters specified with Boost.control()
+#'@param control a named list of control parameters, as returned by with Boost.control
 #'@param max_depth_init_set a vector of possible values of the maximum depth of the initial LADTree that the algorithm choses from
 #'@param min_leaf_size_init_set a vector of possible values of the minimum observations per node of the initial LADTree that the algorithm choses from
 #'
@@ -771,11 +770,6 @@ Boost.validation <- function(x_train, y_train, x_val, y_val, x_test, y_test, typ
       model_best$tree_init = NULL
   }
   model_best$params = params
-  if(control$save_all_err_rr){
-    rownames(errs_test) <- names(errs_val) <- c("median", paste(combs[,1], combs[,2], sep = " "))
-    colnames(errs_test) <- error
-    model_best$save_all_err_rr <- list(errs_val = errs_val, errs_test = errs_test)
-  }
 
   return(model_best)
 }
@@ -845,10 +839,10 @@ find_val <- function(model, var_names){
 #'@param y_test response vector for test data (vector/dataframe)
 #'@return A list with with the following components:
 #'
-#' \item{f_t_test}{predicted values with model using x_test as the predictors}
-#' \item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control); the row dimension is the early stopping time, and the column dimension is how many types of errors to return (specidied by error); each row corresponds to the test errors at each iteration (before early stopping)}
-#' \item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE in control)}
-#' \item{value}{a vector of test error evaluated at early stopping time}
+#' \item{f_t_test}{predicted values with model at the early stopping iteration using x_test as the predictors}
+#' \item{err_test}{a matrix of test errors before and at the early stopping iteration (returned if make_prediction = TRUE in control); the matrix dimension is the early stopping iteration by the number of error types (matches the \code{error} argument in the input); each row corresponds to the test errors at each iteration}
+#' \item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE in control)}
+#' \item{value}{a vector of test errors evaluated at the early stopping iteration}
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'
@@ -958,7 +952,7 @@ cal_predict <- function(model, x_test, y_test){
 #' @param y_val response vector for validation data (vector/dataframe)
 #' @param trace logical indicating whether to print the variable under calculation for monitoring progress (defaults to \code{FALSE})
 #'
-#' @return a vector of permutation variable importance scores
+#' @return a vector of permutation variable importance scores (one per explanatory variable)
 #'
 #' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
 #'

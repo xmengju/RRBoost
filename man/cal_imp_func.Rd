@@ -16,7 +16,7 @@ cal_imp_func(model, x_val, y_val, trace = FALSE)
 \item{trace}{logical indicating whether to print the variable under calculation for monitoring progress (defaults to \code{FALSE})}
 }
 \value{
-a vector of permutation variable importance scores
+a vector of permutation variable importance scores (one per explanatory variable)
 }
 \description{
 This function  calculates variable importance scores for a previously

@@ -113,7 +113,7 @@ among those constructed with all the possible combinations of
 and `min_leaf_size_init_set` equal to 10, 20 or 30 
 (`min_leaf_size_init_set = c(10,20,30)`). 
 
-```{r median, results="hide", cache=TRUE, message=FALSE}
+```{r median, results="hide", message=FALSE, cache = TRUE}
 model_RRBoost_median = Boost(x_train = xtrain, y_train = ytrain, 
                              x_val = xval, y_val = yval, 
                              x_test = xtest, y_test = ytest, 
@@ -192,7 +192,7 @@ calculate variable importance when needed. Note that to allow this
 separation, `save_tree = TRUE` is required in `control`. This saves 
 the trainer weak learners, which are needed for calculating prediction 
 and variable importance, as a model component. 
-```{r separate, results='hide', cache=TRUE}
+```{r separate, results='hide'}
 model = Boost(x_train = xtrain, y_train = ytrain, 
               x_val = xval, y_val = yval, 
               # x_test = xtest, y_test = ytest,
@@ -215,7 +215,7 @@ print(all.equal(var_importance, model_RRBoost_LADTree$var_importance))
 Finally, we compare the performance of 
 `RRBoost` with that of the other boosting algorithms implemented
 in the package, namely: `L2Boost`, `LADBoost`, `MBoost`, and `Robloss`. 
-```{r compare, results="hide", cache=TRUE}
+```{r compare, results="hide", cache = TRUE}
 model_L2Boost = Boost(x_train = xtrain, y_train = ytrain, 
                               x_val = xval, y_val = yval, 
                               x_test = xtest, y_test = ytest, 

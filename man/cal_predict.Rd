@@ -16,10 +16,10 @@ cal_predict(model, x_test, y_test)
 \value{
 A list with with the following components:
 
-\item{f_t_test}{predicted values with model using x_test as the predictors}
-\item{err_test}{a matrix of test errors (returned if make_prediction = TRUE in control)}
-\item{f_test}{matrix of test function estimates at all iterations (returned if save_f = TRUE in control)}
-\item{value}{a vector of test error evaluated at early stopping time}
+\item{f_t_test}{predicted values with model at the early stopping iteration using x_test as the predictors}
+\item{err_test}{a matrix of test errors before and at the early stopping iteration (returned if make_prediction = TRUE in control); the matrix dimension is the early stopping iteration by the number of error types (matches the \code{error} argument in the input); each row corresponds to the test errors at each iteration}
+\item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE in control)}
+\item{value}{a vector of test errors evaluated at the early stopping iteration}
 }
 \description{
 A function to make predictions and calculate test error given an object returned by Boost and test data

@@ -29,17 +29,17 @@ Boost(
 
 \item{y_val}{response vector for validation data (vector/dataframe)}
 
-\item{x_test}{predictor matrix for test data (matrix/dataframe, optional)}
+\item{x_test}{predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)}
 
-\item{y_test}{response vector for test data (vector/dataframe,  optional)}
+\item{y_test}{response vector for test data (vector/dataframe, optional, required when make_prediction in control = TRUE)}
 
-\item{type}{a string indicating the desired boosting algorithm. Valid options are: "L2Boost", "MBoost", "Robloss", "SBoost", "RRBoost". (string)}
+\item{type}{type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 
-\item{error}{a string (or vector of strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error) (array)}
+\item{error}{a character string (or vector of character strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error)}
 
 \item{niter}{number of boosting iterations (for RRBoost: T_{1,max} + T_{2,max}) (numeric)}
 
-\item{y_init}{a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (string)}
+\item{y_init}{a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)}
 
 \item{max_depth}{the maximum depth of the tree learners (numeric)}
 
@@ -49,26 +49,26 @@ Boost(
 }
 \value{
 A list with the following components:
-\item{type}{a string indicating the boosting algorithm run (e.g. 'RRBoost',"L2Boost")}
+\item{type}{type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 \item{control}{the list of control parameters used}
 \item{niter}{number of iterations for the boosting algorithm (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 \item{error}{if \code{make_prediction = TRUE} in argument \code{control}, a vector of prediction errors evaluated on the test set at early stopping time. The length of the vector matches that of the \code{error} argument in the input.}
 \item{tree_init}{if \code{y_init = "LADTree"}, the initial tree (an object of class \code{rpart})}
 \item{tree_list}{if \code{save_tree = TRUE} in \code{control}, a list of trees fitted at each boosting iteration}
-\item{f_train_init}{a vector of initialized estimator of the training data}
+\item{f_train_init}{a vector of the initialized estimator of the training data}
 \item{alpha}{a vector of base learners' coefficients}
 \item{early_stop_idx}{early stopping iteration}
 \item{when_init}{if \code{type = "RRBoost"}, the early stopping time of the first stage of RRBoost}
-\item{loss_train}{a vector of training loss values (one value per iteration)}
-\item{loss_val}{a vector of validation loss values (one value per iteration)}
-\item{err_val}{a vector of validation aad errors (one value per iteration)}
-\item{err_train}{a vector of training aad errors (one value per iteration)}
-\item{err_test}{a matrix of test errors before and at the early stopping time (returned if make_prediction = TRUE in control); the row dimension is the early stopping time, and the column dimension is how many types of errors to return (specidied by error); each row corresponds to the test errors at each iteration}
+\item{loss_train}{a vector of training loss values (one per iteration)}
+\item{loss_val}{a vector of validation loss values (one per iteration)}
+\item{err_val}{a vector of validation aad errors (one per iteration)}
+\item{err_train}{a vector of training aad errors (one  per iteration)}
+\item{err_test}{a matrix of test errors before and at the early stopping iteration (returned if make_prediction = TRUE in control); the matrix dimension is the early stopping iteration by the number of error types (matches the \code{error} argument in the input); each row corresponds to the test errors at each iteration}
 \item{f_train}{a matrix of training function estimates at all iterations (returned if save_f = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
 \item{f_val}{a matrix of validation function estimates at all iterations (returned if save_f = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
-\item{f_test}{a matrix of test function estimates at iterations before and at the early stopping time (returned if save_f = TRUE and make_prediction = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
-\item{var_select}{a vector of variable selection indicators (one value per explanatory variable; 1 if the variable havs been selected by at least one of the base learners, and 0 otherwise)}
-\item{var_importance}{a vector of permutation importance measures at early stopping time (one value per explanatory variable, and returned if cal_imp = TRUE in control)}
+\item{f_test}{a matrix of test function estimatesbefore and at the early stopping iteration (returned if save_f = TRUE and make_prediction = TRUE in control); each column corresponds to the fitted values of the predictor at each iteration}
+\item{var_select}{a vector of variable selection indicators (one  per explanatory variable; 1 if the variable was selected by at least one of the base learners, and 0 otherwise)}
+\item{var_importance}{ a vector of permutation variable importance scores (one per explanatory variable, and returned if cal_imp = TRUE in control)}
 }
 \description{
 This function implements the RRBoost robust boosting algorithm for regression.

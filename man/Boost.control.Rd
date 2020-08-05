@@ -17,21 +17,20 @@ Boost.control(
   make_prediction = TRUE,
   save_tree = FALSE,
   precision = 4,
-  save_all_err_rr = TRUE,
   shrinkage = 1,
   trace = FALSE
 )
 }
 \arguments{
-\item{n_init}{number of iterations for the 1st stage of RRBoost ($T_{1,max}$) (int)}
+\item{n_init}{number of iterations for the SBoost step of RRBoost ($T_{1,max}$) (int)}
 
 \item{eff_m}{scalar between 0 and 1 indicating the efficiency (measured in a linear model with Gaussian errors) of Tukey's loss function used in the 2nd stage of RRBoost.}
 
 \item{bb}{breakdown point of the M-scale estimator used in the SBoost step (numeric)}
 
-\item{trim_prop}{trimming proportion if `trmse` is used as the performance metric (numeric). The data deemed as non-outliers are defined to have residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution.  For example,  trim_prop = 0.1 ignored 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles. If the user specifies both trim_prop and trim_c, trim_c will be used.}
+\item{trim_prop}{trimming proportion if `trmse` is used as the performance metric (numeric). 'trmse' calculates mean squared error of residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution (e.g. trim_prop = 0.1 ignores 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles). If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.}
 
-\item{trim_c}{the trimming constant if `trmse` is used as the performance metric (numeric). The data deemed as non-outliers are those with residuals (r)  between median(r) + trim_c mad(r) and median(r) - trim_c mad(r), and trmse calculates RMSE for non-outliers only. If the user specifies both trim_prop and trim_c, trim_c will be used.}
+\item{trim_c}{the trimming constant if `trmse` is used as the performance metric (numeric, defaults to 3). 'trmse' calculates mean squared error of residuals (r) between median(r) + trim_c mad(r) and median(r) - trim_c mad(r).  If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.}
 
 \item{max_depth_init}{the maximum depth of the initial LADTtree  (numeric, defaults to 3)}
 
@@ -39,15 +38,13 @@ Boost.control(
 
 \item{cal_imp}{logical indicating whether to calculate variable importance  (defaults to \code{TRUE})}
 
-\item{save_f}{logical indicating whether to save the function estimates at all iterations (defaults to \code{TRUE})}
+\item{save_f}{logical indicating whether to save the function estimates at all iterations (defaults to \code{FALSE})}
 
 \item{make_prediction}{logical indicating whether to make predictions using \code{x_test} (defaults to \code{TRUE})}
 
 \item{save_tree}{logical indicating whether to save trees at all iterations  (defaults to \code{FALSE})}
 
 \item{precision}{number of significant digits to keep when using validation error to calculate early stopping time (numeric, defaults to 4)}
-
-\item{save_all_err_rr}{logical indicating whether to save validation and test error of RRBoost trained with all combination of LADTree parameters (defaults to \code{TRUE})}
 
 \item{shrinkage}{shrinkage parameter in boosting (numeric, defaults to 1 which corresponds to no shrinkage)}
 
