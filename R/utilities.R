@@ -40,9 +40,10 @@ rmse <- function(x){
 trmse <- function(trim_prop = NULL, trim_c = NULL, x){
   if(length(trim_c) != 0){
     idx <- (x < (median(x) + trim_c*mad(x))) & x > (median(x) - trim_c*mad(x))
-  }
-  if(length(trim_prop) != 0){
-    idx <- (x < quantile(x, 1- trim_prop/2)) & (x > quantile(x, trim_prop/2))
+  }else{
+    if(length(trim_prop) != 0){
+      idx <- (x < quantile(x, 1- trim_prop/2)) & (x > quantile(x, trim_prop/2))
+    }
   }
   return(list(trmse = rmse(x[idx]), idx = idx))
 }

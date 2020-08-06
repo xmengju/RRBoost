@@ -4,10 +4,21 @@
 \alias{Boost}
 \title{Robust Boosting for regression}
 \usage{
-Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
-  error = c("rmse", "aad"), niter = 200, y_init = "median",
-  max_depth = 1, tree_init_provided = NULL,
-  control = Boost.control())
+Boost(
+  x_train,
+  y_train,
+  x_val,
+  y_val,
+  x_test,
+  y_test,
+  type = "RRBoost",
+  error = c("rmse", "aad"),
+  niter = 200,
+  y_init = "LADTree",
+  max_depth = 1,
+  tree_init_provided = NULL,
+  control = Boost.control()
+)
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -18,13 +29,13 @@ Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
 
 \item{y_val}{response vector for validation data (vector/dataframe)}
 
-\item{x_test}{predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)}
+\item{x_test}{predictor matrix for test data (matrix/dataframe, optional, required when \code{make_prediction} in control is \code{TRUE})}
 
-\item{y_test}{response vector for test data (vector/dataframe, optional, required when make_prediction in control = TRUE)}
+\item{y_test}{response vector for test data (vector/dataframe, optional, required when \code{make_prediction} in control is \code{TRUE})}
 
 \item{type}{type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 
-\item{error}{a character string (or vector of character strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error)}
+\item{error}{a character string (or vector of character strings) indicating the type of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absolute deviation), and "trmse" (trimmed root mean squared error)}
 
 \item{niter}{number of boosting iterations (for RRBoost: T_{1,max} + T_{2,max}) (numeric)}
 
@@ -34,11 +45,11 @@ Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost",
 
 \item{tree_init_provided}{an optional pre-fitted initial tree (an \code{rpart} object)}
 
-\item{control}{a named list of control parameters, as returned by with \code{\link{Boost.control}}}
+\item{control}{a named list of control parameters, as returned by \code{\link{Boost.control}}}
 }
 \value{
 A list with the following components:
-\item{type}{type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
+\item{type}{which boosting algorithm was run. One of: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 \item{control}{the list of control parameters used}
 \item{niter}{number of iterations for the boosting algorithm (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 \item{error}{if \code{make_prediction = TRUE} in argument \code{control}, a vector of prediction errors evaluated on the test set at early stopping time. The length of the vector matches that of the \code{error} argument in the input.}
@@ -60,8 +71,8 @@ A list with the following components:
 \item{var_importance}{ a vector of permutation variable importance scores (one per explanatory variable, and returned if cal_imp = TRUE in control)}
 }
 \description{
-This function implements the RRBoost robust boosting algorithm for regression.
-Other robust and non-robust boosting algorithms for regression are also included
+This function implements the RRBoost robust boosting algorithm for regression,
+as well as other robust and non-robust boosting algorithms for regression.
 }
 \details{
 This function implements a robust boosting algorithm for regression (RRBoost).

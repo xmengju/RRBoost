@@ -329,7 +329,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #'     cal_imp = FALSE))
 #'
 #' @export
-Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boost", error = c("rmse","aad"),   niter = 200, y_init = "median",  max_depth = 1, tree_init_provided = NULL, control = Boost.control()) {
+Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost", error = c("rmse","aad"),   niter = 200, y_init = "LADTree",  max_depth = 1, tree_init_provided = NULL, control = Boost.control()) {
 
   cc <- NA; n_init <- NA;
 
