@@ -1,7 +1,7 @@
 RRBoost: a robust boosting algorithm for regression problems
 ================
 Xiaomeng Ju and Matias Salibian Barrera
-2020-08-03
+2020-08-06
 
 This repository contains `R` code implementing the robust boosting
 algorithm [paper URL](https://github.com). This method provides an
