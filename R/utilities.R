@@ -42,7 +42,7 @@ trmse <- function(trim_prop = NULL, trim_c = NULL, x){
     idx <- (x < (median(x) + trim_c*mad(x))) & x > (median(x) - trim_c*mad(x))
   }else{
     if(length(trim_prop) != 0){
-      idx <- (x < quantile(x, 1- trim_prop/2)) & (x > quantile(x, trim_prop/2))
+      idx <-  (abs(x) < quantile(abs(x), 1-trim_prop))
     }
   }
   return(list(trmse = rmse(x[idx]), idx = idx))

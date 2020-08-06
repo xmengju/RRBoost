@@ -8,8 +8,8 @@
 #' @param n_init number of iterations for the SBoost step of RRBoost ($T_{1,max}$) (int)
 #' @param eff_m scalar between 0 and 1 indicating the efficiency (measured in a linear model with Gaussian errors) of Tukey's loss function used in the 2nd stage of RRBoost.
 #' @param bb breakdown point of the M-scale estimator used in the SBoost step (numeric)
-#' @param trim_prop trimming proportion if `trmse` is used as the performance metric (numeric). 'trmse' calculates mean squared error of residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution (e.g. trim_prop = 0.1 ignores 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles). If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
-#' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric, defaults to 3). 'trmse' calculates mean squared error of the residuals (r) between median(r) + trim_c mad(r) and median(r) - trim_c mad(r).  If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
+#' @param trim_prop trimming proportion if 'trmse' is used as the performance metric (numeric). 'trmse' calculates the root-mean-square error of residuals (r) of which |r| < quantile(|r|, 1-trim_prop)  (e.g. trim_prop = 0.1 ignores 10\% of the data and calculates RMSE of residuals whose absolute values are below 90\% quantile of |r|). If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
+#' @param trim_c the trimming constant if 'trmse' is used as the performance metric (numeric, defaults to 3). 'trmse' calculates the root-mean-square error of the residuals (r) between median(r) + trim_c mad(r) and median(r) - trim_c mad(r).  If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
 #' @param max_depth_init the maximum depth of the initial LADTtree  (numeric, defaults to 3)
 #' @param min_leaf_size_init the minimum number of observations per node of the initial LADTtree (numeric, defaults to 10)
 #' @param cal_imp logical indicating whether to calculate variable importance  (defaults to \code{TRUE})

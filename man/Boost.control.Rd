@@ -4,11 +4,22 @@
 \alias{Boost.control}
 \title{Tuning and control parameters for the robust boosting algorithm}
 \usage{
-Boost.control(n_init = 100, eff_m = 0.95, bb = 0.5,
-  trim_prop = NULL, trim_c = 3, max_depth_init = 3,
-  min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE,
-  make_prediction = TRUE, save_tree = FALSE, precision = 4,
-  shrinkage = 1, trace = FALSE)
+Boost.control(
+  n_init = 100,
+  eff_m = 0.95,
+  bb = 0.5,
+  trim_prop = NULL,
+  trim_c = 3,
+  max_depth_init = 3,
+  min_leaf_size_init = 10,
+  cal_imp = TRUE,
+  save_f = FALSE,
+  make_prediction = TRUE,
+  save_tree = FALSE,
+  precision = 4,
+  shrinkage = 1,
+  trace = FALSE
+)
 }
 \arguments{
 \item{n_init}{number of iterations for the SBoost step of RRBoost ($T_{1,max}$) (int)}
@@ -17,9 +28,9 @@ Boost.control(n_init = 100, eff_m = 0.95, bb = 0.5,
 
 \item{bb}{breakdown point of the M-scale estimator used in the SBoost step (numeric)}
 
-\item{trim_prop}{trimming proportion if `trmse` is used as the performance metric (numeric). 'trmse' calculates mean squared error of residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution (e.g. trim_prop = 0.1 ignores 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles). If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.}
+\item{trim_prop}{trimming proportion if 'trmse' is used as the performance metric (numeric). 'trmse' calculates the root-mean-square error of residuals (r) of which |r| < quantile(|r|, 1-trim_prop)  (e.g. trim_prop = 0.1 ignores 10\% of the data and calculates RMSE of residuals whose absolute values are below 90\% quantile of |r|). If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.}
 
-\item{trim_c}{the trimming constant if `trmse` is used as the performance metric (numeric, defaults to 3). 'trmse' calculates mean squared error of residuals (r) between median(r) + trim_c mad(r) and median(r) - trim_c mad(r).  If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.}
+\item{trim_c}{the trimming constant if 'trmse' is used as the performance metric (numeric, defaults to 3). 'trmse' calculates the root-mean-square error of the residuals (r) between median(r) + trim_c mad(r) and median(r) - trim_c mad(r).  If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.}
 
 \item{max_depth_init}{the maximum depth of the initial LADTtree  (numeric, defaults to 3)}
 
