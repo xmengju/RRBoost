@@ -4,22 +4,11 @@
 \alias{Boost.control}
 \title{Tuning and control parameters for the robust boosting algorithm}
 \usage{
-Boost.control(
-  n_init = 100,
-  eff_m = 0.95,
-  bb = 0.5,
-  trim_prop = NULL,
-  trim_c = 3,
-  max_depth_init = 3,
-  min_leaf_size_init = 10,
-  cal_imp = TRUE,
-  save_f = FALSE,
-  make_prediction = TRUE,
-  save_tree = FALSE,
-  precision = 4,
-  shrinkage = 1,
-  trace = FALSE
-)
+Boost.control(n_init = 100, eff_m = 0.95, bb = 0.5,
+  trim_prop = NULL, trim_c = 3, max_depth_init = 3,
+  min_leaf_size_init = 10, cal_imp = TRUE, save_f = FALSE,
+  make_prediction = TRUE, save_tree = FALSE, precision = 4,
+  shrinkage = 1, trace = FALSE)
 }
 \arguments{
 \item{n_init}{number of iterations for the SBoost step of RRBoost ($T_{1,max}$) (int)}
