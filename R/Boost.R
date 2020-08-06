@@ -9,7 +9,7 @@
 #' @param eff_m scalar between 0 and 1 indicating the efficiency (measured in a linear model with Gaussian errors) of Tukey's loss function used in the 2nd stage of RRBoost.
 #' @param bb breakdown point of the M-scale estimator used in the SBoost step (numeric)
 #' @param trim_prop trimming proportion if `trmse` is used as the performance metric (numeric). 'trmse' calculates mean squared error of residuals at quantiles from trim_prop/2 to 1- trim_prop/2 of the residual distribution (e.g. trim_prop = 0.1 ignores 10\% of the data and calculates RMSE of residuals at 5\%-95\% quantiles). If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
-#' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric, defaults to 3). 'trmse' calculates mean squared error of residuals (r) between median(r) + trim_c mad(r) and median(r) - trim_c mad(r).  If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
+#' @param trim_c the trimming constant if `trmse` is used as the performance metric (numeric, defaults to 3). 'trmse' calculates mean squared error of the residuals (r) between median(r) + trim_c mad(r) and median(r) - trim_c mad(r).  If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
 #' @param max_depth_init the maximum depth of the initial LADTtree  (numeric, defaults to 3)
 #' @param min_leaf_size_init the minimum number of observations per node of the initial LADTtree (numeric, defaults to 10)
 #' @param cal_imp logical indicating whether to calculate variable importance  (defaults to \code{TRUE})
@@ -256,8 +256,8 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 
 #' Robust Boosting for regression
 #'
-#' This function implements the RRBoost robust boosting algorithm for regression.
-#' Other robust and non-robust boosting algorithms for regression are also included
+#' This function implements the RRBoost robust boosting algorithm for regression,
+#' as well as other robust and non-robust boosting algorithms for regression.
 #'
 #' This function implements a robust boosting algorithm for regression (RRBoost).
 #' It  also includes the following robust and non-robust boosting algorithms
@@ -268,18 +268,18 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #' @param y_train response vector for training data (vector/dataframe)
 #' @param x_val predictor matrix for validation data (matrix/dataframe)
 #' @param y_val response vector for validation data (vector/dataframe)
-#' @param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
-#' @param y_test response vector for test data (vector/dataframe, optional, required when make_prediction in control = TRUE)
+#' @param x_test predictor matrix for test data (matrix/dataframe, optional, required when \code{make_prediction} in control is \code{TRUE})
+#' @param y_test response vector for test data (vector/dataframe, optional, required when \code{make_prediction} in control is \code{TRUE})
 #' @param type type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)
-#' @param error a character string (or vector of character strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error)
+#' @param error a character string (or vector of character strings) indicating the type of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absolute deviation), and "trmse" (trimmed root mean squared error)
 #' @param y_init a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)
 #' @param max_depth the maximum depth of the tree learners (numeric)
 #' @param niter number of boosting iterations (for RRBoost: T_{1,max} + T_{2,max}) (numeric)
 #' @param tree_init_provided an optional pre-fitted initial tree (an \code{rpart} object)
-#' @param control a named list of control parameters, as returned by with \code{\link{Boost.control}}
+#' @param control a named list of control parameters, as returned by \code{\link{Boost.control}}
 #'
 #' @return A list with the following components:
-#' \item{type}{type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
+#' \item{type}{which boosting algorithm was run. One of: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 #' \item{control}{the list of control parameters used}
 #' \item{niter}{number of iterations for the boosting algorithm (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
 #' \item{error}{if \code{make_prediction = TRUE} in argument \code{control}, a vector of prediction errors evaluated on the test set at early stopping time. The length of the vector matches that of the \code{error} argument in the input.}
@@ -612,14 +612,14 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "L2Boos
 #'@param y_train response vector for training data (vector/dataframe)
 #'@param x_val predictor matrix for validation data (matrix/dataframe)
 #'@param y_val response vector for validation data (vector/dataframe)
-#'@param x_test predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)
-#'@param y_test response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)
+#'@param x_test predictor matrix for test data (matrix/dataframe, optional, required when \code{make_prediction} in control is \code{TRUE})
+#'@param y_test response vector for test data (vector/dataframe,  optional, required when \code{make_prediction} in control is \code{TRUE})
 #'@param type type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)
 #'@param error a character string (or vector of character strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error)
 #'@param y_init a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)
 #'@param max_depth the maximum depth of the tree learners (numeric)
 #'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
-#'@param control a named list of control parameters, as returned by with Boost.control
+#'@param control a named list of control parameters, as returned by \code{\link{Boost.control}}
 #'@param max_depth_init_set a vector of possible values of the maximum depth of the initial LADTree that the algorithm choses from
 #'@param min_leaf_size_init_set a vector of possible values of the minimum observations per node of the initial LADTree that the algorithm choses from
 #'
