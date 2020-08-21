@@ -19,9 +19,9 @@ Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
 
 \item{y_val}{response vector for validation data (vector/dataframe)}
 
-\item{x_test}{predictor matrix for test data (matrix/dataframe, optional, required when make_prediction in control = TRUE)}
+\item{x_test}{predictor matrix for test data (matrix/dataframe, optional, required when \code{make_prediction} in control is \code{TRUE})}
 
-\item{y_test}{response vector for test data (vector/dataframe,  optional, required when make_prediction in control = TRUE)}
+\item{y_test}{response vector for test data (vector/dataframe,  optional, required when \code{make_prediction} in control is \code{TRUE})}
 
 \item{type}{type of the boosting method: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 
@@ -37,7 +37,7 @@ Boost.validation(x_train, y_train, x_val, y_val, x_test, y_test,
 
 \item{min_leaf_size_init_set}{a vector of possible values of the minimum observations per node of the initial LADTree that the algorithm choses from}
 
-\item{control}{a named list of control parameters, as returned by with Boost.control}
+\item{control}{a named list of control parameters, as returned by \code{\link{Boost.control}}}
 }
 \value{
 A list with components
