@@ -56,5 +56,5 @@ prediction <- cal_predict(model, x_test = xtest, y_test = ytest)
 
 }
 \author{
-Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+Xiaomeng Ju, \email{jux01@nyu.edu}
 }

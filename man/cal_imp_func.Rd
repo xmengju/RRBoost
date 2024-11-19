@@ -55,5 +55,5 @@ var_importance <-  cal_imp_func(model, x_val = xval, y_val= yval)
 
 }
 \author{
-Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+Xiaomeng Ju, \email{jux01@nyu.edu}
 }

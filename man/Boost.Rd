@@ -4,10 +4,21 @@
 \alias{Boost}
 \title{Robust Boosting for regression}
 \usage{
-Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost",
-  error = c("rmse", "aad"), niter = 200, y_init = "LADTree",
-  max_depth = 1, tree_init_provided = NULL,
-  control = Boost.control())
+Boost(
+  x_train,
+  y_train,
+  x_val,
+  y_val,
+  x_test,
+  y_test,
+  type = "RRBoost",
+  error = c("rmse", "aad"),
+  niter = 200,
+  y_init = "LADTree",
+  max_depth = 1,
+  tree_init_provided = NULL,
+  control = Boost.control()
+)
 }
 \arguments{
 \item{x_train}{predictor matrix for training data (matrix/dataframe)}
@@ -26,7 +37,7 @@ Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost",
 
 \item{error}{a character string (or vector of character strings) indicating the type of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absolute deviation), and "trmse" (trimmed root mean squared error)}
 
-\item{niter}{number of boosting iterations (for RRBoost: T_{1,max} + T_{2,max}) (numeric)}
+\item{niter}{number of boosting iterations (for RRBoost: \eqn{T_{1,max} + T_{2,max}}) (numeric)}
 
 \item{y_init}{a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)}
 
@@ -40,7 +51,7 @@ Boost(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoost",
 A list with the following components:
 \item{type}{which boosting algorithm was run. One of: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 \item{control}{the list of control parameters used}
-\item{niter}{number of iterations for the boosting algorithm (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
+\item{niter}{number of iterations for the boosting algorithm (for RRBoost \eqn{T_{1,max} + T_{2,max}}) (numeric)}
 \item{error}{if \code{make_prediction = TRUE} in argument \code{control}, a vector of prediction errors evaluated on the test set at early stopping time. The length of the vector matches that of the \code{error} argument in the input.}
 \item{tree_init}{if \code{y_init = "LADTree"}, the initial tree (an object of class \code{rpart})}
 \item{tree_list}{if \code{save_tree = TRUE} in \code{control}, a list of trees fitted at each boosting iteration}
@@ -98,5 +109,5 @@ model_RRBoost_LADTree = Boost(x_train = xtrain, y_train = ytrain,
 \code{\link{Boost.validation}}, \code{\link{Boost.control}}.
 }
 \author{
-Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+Xiaomeng Ju, \email{jux01@nyu.edu}
 }

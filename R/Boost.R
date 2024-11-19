@@ -5,7 +5,7 @@
 #' Various tuning and control parameters for the RRBoost robust boosting algorithm implemented in the
 #' function \code{\link{Boost}},  including options for the initial fit.
 #'
-#' @param n_init number of iterations for the SBoost step of RRBoost ($T_{1,max}$) (int)
+#' @param n_init number of iterations for the SBoost step of RRBoost (\eqn{T_{1,max}}) (int)
 #' @param eff_m scalar between 0 and 1 indicating the efficiency (measured in a linear model with Gaussian errors) of Tukey's loss function used in the 2nd stage of RRBoost.
 #' @param bb breakdown point of the M-scale estimator used in the SBoost step (numeric)
 #' @param trim_prop trimming proportion if 'trmse' is used as the performance metric (numeric). 'trmse' calculates the root-mean-square error of residuals (r) of which |r| < quantile(|r|, 1-trim_prop)  (e.g. trim_prop = 0.1 ignores 10\% of the data and calculates RMSE of residuals whose absolute values are below 90\% quantile of |r|). If  both \code{trim_prop} and \code{trim_c} are specified, \code{trim_c} will be used.
@@ -22,7 +22,7 @@
 #'
 #' @return A list of all input parameters
 #'
-#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#' @author Xiaomeng Ju, \email{jux01@nyu.edu}
 #'
 #' @examples
 #' data(airfoil)
@@ -135,7 +135,7 @@ cal.ss <- function(type, f_t_train, y_train,  cc, bb) {
   }
 
   if(type %in% c("SBoost", "RRBoost")) {
-      ss <- RobStatTM::mscale(f_t_train - y_train,  tuning.chi=cc, delta = bb)
+      ss <- RobStatTM::scaleM(f_t_train - y_train,  tuning.chi=cc, delta = bb)
   }
 
   if(type == "MBoost") {
@@ -157,7 +157,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
          },
 
          SBoost = {
-           ff2 <- function(a, r, h) return(RobStatTM::mscale(r - a*h))
+           ff2 <- function(a, r, h) return(RobStatTM::scaleM(r - a*h))
            upper_region = c(0.5,10,100,300)
            tmp <-  tmp_val <- rep(NA, length(upper_region))
            for(i in 1:length(upper_region)){
@@ -182,7 +182,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
          },
          RRBoost = {
            if(init_status == 0) {
-             ff3 <- function(a, r, h) return(RobStatTM::mscale(r - a*h))
+             ff3 <- function(a, r, h) return(RobStatTM::scaleM(r - a*h))
              upper_region = c(0.5,10,100,300)
              tmp <-  tmp_val <- rep(NA, length(upper_region))
              for(i in 1:length(upper_region)){
@@ -274,14 +274,14 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #' @param error a character string (or vector of character strings) indicating the type of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absolute deviation), and "trmse" (trimmed root mean squared error)
 #' @param y_init a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)
 #' @param max_depth the maximum depth of the tree learners (numeric)
-#' @param niter number of boosting iterations (for RRBoost: T_{1,max} + T_{2,max}) (numeric)
+#' @param niter number of boosting iterations (for RRBoost: \eqn{T_{1,max} + T_{2,max}}) (numeric)
 #' @param tree_init_provided an optional pre-fitted initial tree (an \code{rpart} object)
 #' @param control a named list of control parameters, as returned by \code{\link{Boost.control}}
 #'
 #' @return A list with the following components:
 #' \item{type}{which boosting algorithm was run. One of: "L2Boost", "LADBoost", "MBoost", "Robloss", "SBoost", "RRBoost" (character string)}
 #' \item{control}{the list of control parameters used}
-#' \item{niter}{number of iterations for the boosting algorithm (for RRBoost T_{1,max} + T_{2,max}) (numeric)}
+#' \item{niter}{number of iterations for the boosting algorithm (for RRBoost \eqn{T_{1,max} + T_{2,max}}) (numeric)}
 #' \item{error}{if \code{make_prediction = TRUE} in argument \code{control}, a vector of prediction errors evaluated on the test set at early stopping time. The length of the vector matches that of the \code{error} argument in the input.}
 #' \item{tree_init}{if \code{y_init = "LADTree"}, the initial tree (an object of class \code{rpart})}
 #' \item{tree_list}{if \code{save_tree = TRUE} in \code{control}, a list of trees fitted at each boosting iteration}
@@ -300,7 +300,7 @@ cal.alpha <- function(type,  f_t_train, h_train, y_train, func, ss, init_status,
 #' \item{var_select}{a vector of variable selection indicators (one  per explanatory variable; 1 if the variable was selected by at least one of the base learners, and 0 otherwise)}
 #' \item{var_importance}{ a vector of permutation variable importance scores (one per explanatory variable, and returned if cal_imp = TRUE in control)}
 #'
-#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#' @author Xiaomeng Ju, \email{jux01@nyu.edu}
 #'
 #' @seealso \code{\link{Boost.validation}}, \code{\link{Boost.control}}.
 #'
@@ -364,12 +364,12 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoos
 
   cal_imp <- control$cal_imp
 
-  if(class(x_train) == "numeric") {
+  if(methods::is(x_train, "numeric")) {
     x_train <- data.frame(x = x_train)
   }else{
     x_train <- data.frame(x_train)
   }
-  if(class(x_val) == "numeric") {
+  if(methods::is(x_val, "numeric")) {
     x_val <- data.frame(x = x_val)
   }else{
     x_val <- data.frame(x_val)
@@ -541,7 +541,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoos
         init_status <- 1
         f_t_train <- f_train_early  # rest the current one
         f_t_val <- f_val_early
-        ss <-  RobStatTM::mscale(f_t_train - y_train,  tuning.chi= cc, delta = bb)
+        ss <-  RobStatTM::scaleM(f_t_train - y_train,  tuning.chi= cc, delta = bb)
         cc <- cc_m
         loss_val[i] <- mean(func((f_t_val - y_val)/ss, cc = cc_m))
        }
@@ -559,7 +559,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoos
 
   if(make_prediction == TRUE){
 
-    if(class(x_test) == "numeric") {
+    if(methods::is(x_test, "numeric")) {
       x_test <- data.frame(x = x_test)
     }else{
       x_test <- data.frame(x_test)
@@ -618,7 +618,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoos
 #'@param error a character string (or vector of character strings) indicating the types of error metrics to be evaluated on the test set. Valid options are: "rmse" (root mean squared error), "aad" (average absulute deviation), and "trmse" (trimmed root mean squared error)
 #'@param y_init a string indicating the initial estimator to be used. Valid options are: "median" or "LADTree" (character string)
 #'@param max_depth the maximum depth of the tree learners (numeric)
-#'@param niter number of iterations (for RRBoost T_{1,max} + T_{2,max}) (numeric)
+#'@param niter number of iterations (for RRBoost \eqn{T_{1,max} + T_{2,max}}) (numeric)
 #'@param control a named list of control parameters, as returned by \code{\link{Boost.control}}
 #'@param max_depth_init_set a vector of possible values of the maximum depth of the initial LADTree that the algorithm choses from
 #'@param min_leaf_size_init_set a vector of possible values of the minimum observations per node of the initial LADTree that the algorithm choses from
@@ -627,7 +627,7 @@ Boost <- function(x_train, y_train, x_val, y_val, x_test, y_test, type = "RRBoos
 #' \item{the components of model}{an object returned by Boost that is trained with selected initialization parameters}
 #' \item{param}{a vector of selected initialization parameters (return (0,0) if selected initialization is the median of the training responses)}
 #'
-#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#' @author Xiaomeng Ju, \email{jux01@nyu.edu}
 #'
 #' @seealso \code{\link{Boost}}, \code{\link{Boost.control}}.
 #'
@@ -844,7 +844,7 @@ find_val <- function(model, var_names){
 #' \item{f_test}{a matrix of test function estimates at all iterations (returned if save_f = TRUE in control)}
 #' \item{value}{a vector of test errors evaluated at the early stopping iteration}
 #'
-#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#' @author Xiaomeng Ju, \email{jux01@nyu.edu}
 #'
 #' @examples
 #' \dontrun{
@@ -876,7 +876,7 @@ find_val <- function(model, var_names){
 #' @export
 cal_predict <- function(model, x_test, y_test){
 
-  if(class(x_test) == "numeric") {
+  if(methods::is(x_test,"numeric")) {
     x_test <- data.frame(x = x_test)
   }else{
     x_test <- data.frame(x_test)
@@ -954,7 +954,7 @@ cal_predict <- function(model, x_test, y_test){
 #'
 #' @return a vector of permutation variable importance scores (one per explanatory variable)
 #'
-#' @author Xiaomeng Ju, \email{xmengju@stat.ubc.ca}
+#' @author Xiaomeng Ju, \email{jux01@nyu.edu}
 #'
 #' @examples
 #' \dontrun{
@@ -991,7 +991,7 @@ cal_imp_func <- function(model,  x_val, y_val, trace = FALSE){
     on.exit(assign(".Random.seed", oldseed, envir = .GlobalEnv))
   }
 
-  if(class(x_val) == "numeric") {
+  if(methods::is(x_val,"numeric")) {
     x_val <- data.frame(x = x_val)
   }else{
     x_val <- data.frame(x_val)

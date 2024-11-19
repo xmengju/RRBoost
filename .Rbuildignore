@@ -9,3 +9,5 @@
 .gitignore
 README_files
 README_cache
+^CRAN-SUBMISSION$
+^cran-comments\.md$
