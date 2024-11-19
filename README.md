@@ -5,7 +5,7 @@ Xiaomeng Ju and Matias Salibian Barrera
 
 This repository contains `R` code implementing the robust boosting
 algorithm described in [Ju X, Salibian-Barrera M. Robust Boosting for
-Regression Problems](https://arxiv.org/abs/2002.02054](https://www.sciencedirect.com/science/article/pii/S0167947320301560). This method provides an
+Regression Problems](https://www.sciencedirect.com/science/article/pii/S0167947320301560). This method provides an
 outlier-robust fit for non-parametric regression models.
 
 The package can be installed as follows:
